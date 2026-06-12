@@ -287,10 +287,9 @@ import { SITE_TITLE } from "../consts";
 
 <div id="toast" class="toast"></div>
 
-<!-- Marked from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
-
 <script>
+  import { marked } from "marked";
+
   const TK = "publish_token";
   const REPO = "UsephJo/usephjo.github.io";
 
@@ -389,7 +388,7 @@ import { SITE_TITLE } from "../consts";
   }
 
   // Configure marked
-  const renderer = new (marked as any).Renderer();
+  const renderer = new marked.Renderer();
 
   function updatePreview() {
     const raw = $content.value;
@@ -399,7 +398,7 @@ import { SITE_TITLE } from "../consts";
     }
     try {
       const processed = preprocessObsidian(raw);
-      const html = (marked as any).parse(processed, { renderer, breaks: true });
+      const html = marked.parse(processed, { renderer, breaks: true });
       $preview.innerHTML = html;
     } catch (e) {
       // Silently fail - the preview will just show stale content
