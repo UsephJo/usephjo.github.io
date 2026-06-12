@@ -14,130 +14,245 @@ import { SITE_TITLE } from "../consts";
     :root {
       --bg: #fafaf9; --text: #1c1917;
       --muted: #78716c; --border: #e7e5e4;
-      --accent: #0d6efd;
+      --accent: #0d6efd; --accent-light: #eff6ff;
+      --red: #dc2626; --green: #16a34a;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1c1917; --text: #fafaf9;
         --muted: #a8a29e; --border: #292524;
-        --accent: #60a5fa;
+        --accent: #60a5fa; --accent-light: #1e293b;
       }
     }
     body {
-      font-family: "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      font-family: "PingFang SC", "Noto Sans SC", system-ui, -apple-system, sans-serif;
       background: var(--bg); color: var(--text);
-      max-width: 640px; margin: 0 auto; padding: 2rem 1.2rem;
-      font-size: 17px; line-height: 1.7;
+      min-height: 100vh; font-size: 17px; line-height: 1.7;
+      display: flex; flex-direction: column; align-items: center;
     }
-    h1 { font-size: 1rem; color: var(--muted); font-weight: 500; margin-bottom: 2rem; }
-    .setup { max-width: 400px; margin: 4rem auto; }
-    .setup p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
-    .setup label { display: block; font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--muted); }
-    .setup input { width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--bg); color: var(--text); font-family: monospace; }
-    .setup button, .actions button { padding: 0.6rem 1.2rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.9rem; }
-    .setup button:hover, .actions button:hover { background: var(--border); }
-    .setup .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; }
+
+    /* ===== Token Setup ===== */
+    .setup {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 80vh; max-width: 420px;
+      padding: 2rem; text-align: center;
+    }
+    .setup-icon { font-size: 3rem; margin-bottom: 1.5rem; }
+    .setup h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .setup > p { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.6; }
+    .setup .field { width: 100%; text-align: left; margin-bottom: 1rem; }
+    .setup .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .setup .field input {
+      width: 100%; padding: 0.75rem 0.9rem;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.92rem; background: var(--bg); color: var(--text);
+      font-family: "SF Mono", "JetBrains Mono", monospace;
+      transition: border-color 0.15s;
+    }
+    .setup .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .setup .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
     .setup .hint a { color: var(--accent); }
-    .editor { display: none; }
-    .editor.active { display: block; }
-    .editor textarea {
-      width: 100%; min-height: 280px; padding: 1.2rem;
-      border: none; outline: none; resize: vertical;
-      font-family: inherit; font-size: 1.05rem; line-height: 1.8;
+    .btn {
+      padding: 0.7rem 1.6rem; border: none; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 0.5rem; }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      font-weight: 500; font-size: 0.82rem; padding: 0.4rem 0.8rem;
+    }
+    .btn-ghost:hover { background: var(--border); }
+
+    /* ===== Editor ===== */
+    .editor { display: none; width: 100%; max-width: 680px; padding: 2rem 1.5rem; }
+    .editor.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .editor-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .editor-header h2 { font-size: 1rem; font-weight: 600; color: var(--muted); }
+    .editor-header .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      display: inline-block; margin-right: 0.4rem;
+    }
+
+    .editor-body { flex: 1; display: flex; flex-direction: column; }
+
+    .editor-body textarea {
+      flex: 1; width: 100%; min-height: 360px;
+      padding: 1.5rem; border: none; outline: none; resize: vertical;
+      font-family: inherit; font-size: 1.1rem; line-height: 1.85;
       background: var(--bg); color: var(--text);
-      border-radius: 8px;
-      box-shadow: 0 0 0 1px var(--border);
+      border-radius: 12px;
+      box-shadow: 0 0 0 1px var(--border), 0 2px 8px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
     }
-    .editor textarea:focus { box-shadow: 0 0 0 2px var(--accent); }
-    .editor textarea::placeholder { color: var(--muted); }
-    .meta-row {
-      display: flex; gap: 0.6rem; margin-top: 1rem;
-      align-items: center; flex-wrap: wrap;
+    .editor-body textarea:focus {
+      box-shadow: 0 0 0 2px var(--accent), 0 4px 16px rgba(0,0,0,0.06);
     }
-    .meta-row input {
-      padding: 0.5rem 0.7rem; border: 1px solid var(--border);
+    .editor-body textarea::placeholder { color: var(--muted); opacity: 0.6; }
+
+    /* ===== Options Bar ===== */
+    .options-bar {
+      display: flex; align-items: center; gap: 1.2rem;
+      margin-top: 1rem; padding: 0.8rem 1rem;
+      background: var(--bg); border-radius: 10px;
+      border: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .options-bar .opt-group { display: flex; align-items: center; gap: 0.5rem; }
+    .options-bar label { font-size: 0.82rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .options-bar input[type="text"] {
+      padding: 0.45rem 0.6rem; border: 1px solid var(--border);
       border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);
-      flex: 1; min-width: 120px;
+      font-family: inherit; width: 140px; transition: border-color 0.15s;
     }
-    .meta-row input::placeholder { color: var(--muted); }
-    .meta-row label { font-size: 0.85rem; color: var(--muted); }
-    .actions { margin-top: 1.2rem; display: flex; gap: 0.6rem; align-items: center; }
-    .btn-primary { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; font-weight: 600; }
-    .btn-primary:hover { opacity: 0.85; }
-    .hint-kbd { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
-    .hint-kbd kbd { background: var(--border); padding: 0.15em 0.45em; border-radius: 4px; font-size: 0.82em; }
+    .options-bar input[type="text"]:focus { outline: none; border-color: var(--accent); }
+    .options-bar input[type="text"]::placeholder { color: var(--muted); opacity: 0.5; }
+
+    /* ===== Checkbox (RSS toggle) ===== */
+    .checkbox-wrap { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none; }
+    .checkbox-wrap input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; border: 2px solid var(--border);
+      border-radius: 4px; cursor: pointer; position: relative;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .checkbox-wrap input[type="checkbox"]:checked {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .checkbox-wrap input[type="checkbox"]:checked::after {
+      content: ""; position: absolute;
+      left: 5px; top: 2px; width: 5px; height: 9px;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .checkbox-wrap .check-label { font-size: 0.82rem; color: var(--muted); cursor: pointer; }
+    .checkbox-wrap:hover .check-label { color: var(--text); }
+
+    /* ===== Actions Bar ===== */
+    .actions-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 1.2rem;
+    }
+    .actions-bar .left { display: flex; gap: 0.6rem; align-items: center; }
+    .btn-publish { padding: 0.65rem 1.8rem; background: var(--text); color: var(--bg); border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .btn-publish:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-publish:active { transform: translateY(0); }
+    .btn-publish:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+    .kbd-hint { font-size: 0.8rem; color: var(--muted); }
+    .kbd-hint kbd {
+      background: var(--border); padding: 0.15em 0.5em; border-radius: 4px;
+      font-size: 0.85em; font-family: inherit;
+    }
+    .char-count { font-size: 0.8rem; color: var(--muted); }
+
+    /* ===== Toast ===== */
     .toast {
-      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-      padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 0.9rem;
-      background: #1c1917; color: #fafaf9; z-index: 100; opacity: 0;
-      transition: opacity 0.2s; pointer-events: none;
+      position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(1rem);
+      padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9rem;
+      background: #1c1917; color: #fafaf9; z-index: 100;
+      opacity: 0; transition: all 0.25s ease; pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
-    .toast.show { opacity: 1; }
-    .toast.error { background: #dc2626; }
-    .toast.success { background: #16a34a; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
-    .logout { font-size: 0.8rem; color: var(--muted); cursor: pointer; background: none; border: none; text-decoration: underline; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--red); }
+    .toast.success { background: var(--green); }
+    .toast a { color: #fff; text-decoration: underline; }
   </style>
 </head>
 <body>
 
-<h1>发布</h1>
-
 <!-- Token Setup -->
 <div id="setup" class="setup">
-  <p>首次使用需要你的 GitHub 个人令牌。</p>
-  <label for="token">Personal Access Token</label>
-  <input id="token" type="password" placeholder="ghp_..." />
-  <p class="hint">
-    没有令牌？去 <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank">这里创建一个</a>，勾选 <strong>repo</strong> 权限即可。<br />令牌只会保存在你的浏览器中。
-  </p>
-  <button id="save-token">保存并开始使用</button>
-  <p id="token-msg" style="color:#dc2626;margin-top:0.5rem;display:none;"></p>
+  <div class="setup-icon">&#9998;</div>
+  <h2>连接 GitHub</h2>
+  <p>首次使用需要一个 Personal Access Token，<br />令牌只会保存在你的浏览器中。</p>
+  <div class="field">
+    <label for="token-input">Token</label>
+    <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" />
+    <p class="hint">
+      没有令牌？去 <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank">这里创建一个</a>，勾选 repo 权限。
+    </p>
+  </div>
+  <button id="btn-save" class="btn btn-primary">保存并开始</button>
+  <p id="token-error" style="color:var(--red);font-size:0.85rem;margin-top:0.5rem;display:none;"></p>
 </div>
 
 <!-- Editor -->
 <div id="editor" class="editor">
-  <textarea id="content" placeholder="第一行是标题，下面是正文..."></textarea>
-  <div class="meta-row">
-    <label>分类</label>
-    <input id="categories" placeholder="tech, life" />
-    <label>标签</label>
-    <input id="tags" placeholder="astro, blog" />
+  <div class="editor-header">
+    <h2><span class="dot"></span>写点什么</h2>
+    <button id="btn-logout" class="btn-ghost">退出</button>
   </div>
-  <div class="actions">
-    <button id="publish-btn" class="btn-primary">发布</button>
-    <span class="hint-kbd"><kbd>&#8984;</kbd> + <kbd>&#9166;</kbd></span>
+
+  <div class="editor-body">
+    <textarea
+      id="content-area"
+      placeholder="第一行是标题&#10;空一行&#10;开始写正文..."
+      autofocus
+    ></textarea>
+  </div>
+
+  <div class="options-bar">
+    <div class="opt-group">
+      <label for="categories-input">分类</label>
+      <input id="categories-input" type="text" placeholder="tech, life" />
+    </div>
+    <div class="opt-group">
+      <label for="tags-input">标签</label>
+      <input id="tags-input" type="text" placeholder="astro, blog" />
+    </div>
+    <label class="checkbox-wrap" title="取消勾选后，文章将保留在网站上但不出现在 RSS 中">
+      <input type="checkbox" id="rss-check" checked />
+      <span class="check-label">推送到 RSS</span>
+    </label>
+  </div>
+
+  <div class="actions-bar">
+    <div class="left">
+      <button id="btn-publish" class="btn-publish">发布</button>
+      <span class="kbd-hint"><kbd>&#8984;</kbd> <kbd>Enter</kbd></span>
+    </div>
+    <span class="char-count" id="char-count">0 字</span>
   </div>
 </div>
 
-<hr />
-<button id="logout-btn" class="logout">清除令牌（退出）</button>
 <div id="toast" class="toast"></div>
 
 <script>
-  const TOKEN_KEY = "publish_token";
+  const TK = "publish_token";
   const REPO = "UsephJo/usephjo.github.io";
 
   const $setup = document.getElementById("setup");
   const $editor = document.getElementById("editor");
-  const $content = document.getElementById("content");
-  const $categories = document.getElementById("categories");
-  const $tags = document.getElementById("tags");
-  const $publishBtn = document.getElementById("publish-btn");
-  const $saveToken = document.getElementById("save-token");
-  const $tokenInput = document.getElementById("token");
-  const $tokenMsg = document.getElementById("token-msg");
+  const $tokenInput = document.getElementById("token-input");
+  const $btnSave = document.getElementById("btn-save");
+  const $tokenError = document.getElementById("token-error");
+  const $btnLogout = document.getElementById("btn-logout");
+  const $content = document.getElementById("content-area");
+  const $categories = document.getElementById("categories-input");
+  const $tags = document.getElementById("tags-input");
+  const $rssCheck = document.getElementById("rss-check");
+  const $btnPublish = document.getElementById("btn-publish");
+  const $charCount = document.getElementById("char-count");
   const $toast = document.getElementById("toast");
-  const $logout = document.getElementById("logout-btn");
 
-  function toast(text, type) {
-    $toast.className = "toast " + (type || "");
-    $toast.textContent = text;
+  let toastTimer: ReturnType<typeof setTimeout>;
+  let publishing = false;
+
+  function toast(text: string, type?: string) {
+    clearTimeout(toastTimer);
+    $toast.className = "toast " + (type ?? "");
+    $toast.innerHTML = text;
     requestAnimationFrame(() => $toast.classList.add("show"));
-    setTimeout(() => $toast.classList.remove("show"), 2800);
+    toastTimer = setTimeout(() => $toast.classList.remove("show"), 3000);
   }
 
-  function hasToken() { return !!localStorage.getItem(TOKEN_KEY); }
+  function hasToken() { return !!localStorage.getItem(TK); }
 
   function showEditor() {
     $setup.style.display = "none";
@@ -146,80 +261,96 @@ import { SITE_TITLE } from "../consts";
   }
 
   function showSetup() {
-    $setup.style.display = "block";
+    $setup.style.display = "flex";
     $editor.classList.remove("active");
     $tokenInput.value = "";
   }
 
   // Init
-  if (hasToken()) {
+  if (hasToken()) showEditor();
+
+  $btnSave.addEventListener("click", () => {
+    const t = $tokenInput.value.trim();
+    if (!t) { $tokenError.style.display = "block"; $tokenError.textContent = "请输入令牌"; return; }
+    localStorage.setItem(TK, t);
+    $tokenError.style.display = "none";
     showEditor();
+  });
+
+  $tokenInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") $btnSave.click();
+  });
+
+  $btnLogout.addEventListener("click", () => {
+    if (confirm("确定清除令牌？")) { localStorage.removeItem(TK); showSetup(); toast("令牌已清除"); }
+  });
+
+  // Char count
+  $content.addEventListener("input", () => {
+    $charCount.textContent = `${$content.value.length} 字`;
+  });
+
+  function toBase64(str: string): string {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
   }
 
-  $saveToken.addEventListener("click", () => {
-    const t = $tokenInput.value.trim();
-    if (!t) {
-      $tokenMsg.style.display = "block";
-      $tokenMsg.textContent = "请输入令牌";
-      return;
-    }
-    localStorage.setItem(TOKEN_KEY, t);
-    $tokenMsg.style.display = "none";
-    showEditor();
-  });
-
-  $logout.addEventListener("click", () => {
-    localStorage.removeItem(TOKEN_KEY);
-    showSetup();
-    toast("令牌已清除");
-  });
-
   async function publish() {
-    const raw = $content.value.trim();
-    if (!raw) { toast("请输入内容", "error"); return; }
+    if (publishing) return;
+    const raw = $content.value;
+    if (!raw.trim()) { toast("请输入内容", "error"); return; }
 
     const lines = raw.split("\n");
     const title = lines[0].trim();
-    const body = lines.slice(1).join("\n").trim();
+    // Find first non-empty line after title as body start
+    let bodyStart = 1;
+    while (bodyStart < lines.length && lines[bodyStart].trim() === "") bodyStart++;
+    const body = lines.slice(bodyStart).join("\n").trim();
 
     if (!title) { toast("第一行不能为空（标题）", "error"); return; }
     if (!body) { toast("正文不能为空", "error"); return; }
 
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) { toast("令牌未保存，请刷新页面", "error"); showSetup(); return; }
+    const token = localStorage.getItem(TK);
+    if (!token) { toast("令牌未保存，请刷新重试", "error"); showSetup(); return; }
 
-    const categories = $categories.value.split(",").map(s => s.trim()).filter(Boolean);
+    const cats = $categories.value.split(",").map(s => s.trim()).filter(Boolean);
     const tags = $tags.value.split(",").map(s => s.trim()).filter(Boolean);
+    const rss = $rssCheck.checked;
 
     const now = new Date();
     const dateStr = now.toISOString().split("T")[0];
-    let slug = title
+    const slug = title
       .toLowerCase()
       .replace(/[^\w一-鿿]+/g, "-")
       .replace(/^-|-$/g, "")
-      .slice(0, 60)
-      || "untitled";
-    // Avoid duplicate filenames: add timestamp if needed
-    const filename = slug + ".md";
+      .slice(0, 60) || "untitled";
+    const ts = now.getTime().toString(36);
+    const filename = `${slug}-${ts}.md`;
 
-    const catsYaml = categories.length > 0 ? `categories: [${categories.join(", ")}]` : "categories: []";
-    const tagsYaml = tags.length > 0 ? `tags: [${tags.join(", ")}]` : "tags: []";
+    const esc = (s: string) => s.replace(/"/g, '\\"');
+    const catsYaml = cats.length ? `categories: [${cats.join(", ")}]` : "categories: []";
+    const tagsYaml = tags.length ? `tags: [${tags.join(", ")}]` : "tags: []";
+    const desc = esc(body.replace(/\n/g, " ").slice(0, 120));
 
     const fm = [
       "---",
-      `title: "${title.replace(/"/g, '\\"')}"`,
+      `title: "${esc(title)}"`,
       `date: ${dateStr}`,
       catsYaml,
       tagsYaml,
-      `description: "${body.slice(0, 100).replace(/"/g, '\\"').replace(/\n/g, ' ')}"`,
+      `rss: ${rss}`,
+      `description: "${desc}"`,
       "---",
       "",
       body,
       "",
     ].join("\n");
 
-    $publishBtn.disabled = true;
-    $publishBtn.textContent = "发布中...";
+    publishing = true;
+    $btnPublish.disabled = true;
+    $btnPublish.textContent = "发布中...";
 
     try {
       const res = await fetch(
@@ -233,7 +364,7 @@ import { SITE_TITLE } from "../consts";
           },
           body: JSON.stringify({
             message: `发布: ${title}`,
-            content: btoa(String.fromCharCode(...new TextEncoder().encode(fm))),
+            content: toBase64(fm),
           }),
         }
       );
@@ -243,23 +374,25 @@ import { SITE_TITLE } from "../consts";
         throw new Error(err.message || `HTTP ${res.status}`);
       }
 
-      toast(`发布成功！稍后访问 /posts/${slug}/`, "success");
+      toast(`已发布！稍后访问 <a href="/posts/${slug}-${ts}/">/${slug}-${ts}</a>`, "success");
       $content.value = "";
       $categories.value = "";
       $tags.value = "";
+      $rssCheck.checked = true;
+      $charCount.textContent = "0 字";
       $content.focus();
     } catch (e) {
-      toast(`发布失败: ${(e as Error).message}`, "error");
+      toast(`发布失败：${(e as Error).message}`, "error");
     } finally {
-      $publishBtn.disabled = false;
-      $publishBtn.textContent = "发布";
+      publishing = false;
+      $btnPublish.disabled = false;
+      $btnPublish.textContent = "发布";
     }
   }
 
-  $publishBtn.addEventListener("click", publish);
+  $btnPublish.addEventListener("click", publish);
 
   document.addEventListener("keydown", (e) => {
-    // Cmd+Enter
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       if (hasToken()) publish();
