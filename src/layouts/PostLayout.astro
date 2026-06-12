@@ -1,0 +1,83 @@
+---
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "./BaseLayout.astro";
+import TableOfContents from "../components/TableOfContents.astro";
+import Sidebar from "../components/Sidebar.astro";
+import { CATEGORIES } from "../consts";
+
+interface Props {
+  post: CollectionEntry<"posts"> | CollectionEntry<"notes"> | CollectionEntry<"moments">;
+}
+
+const { post } = Astro.props;
+const { title, date, updated, categories, tags, description } = post.data;
+
+const { headings } = post.rendered ?? { headings: [] };
+
+const postCategories = CATEGORIES.filter((c) =>
+  (categories ?? []).includes(c.slug)
+);
+const typeLabel =
+  post.collection === "notes" ? "笔记" : post.collection === "moments" ? "片段" : "文章";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+>
+  <div class="page-layout">
+    <main class="main-content">
+      <article>
+        <header class="article-header">
+          <h1>{title}</h1>
+          <div class="article-meta">
+            <time datetime={date.toISOString()}>
+              {date.toLocaleDateString("zh-CN", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
+            {updated && (
+              <span>
+                更新于{" "}
+                {updated.toLocaleDateString("zh-CN", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            )}
+            <span>{typeLabel}</span>
+            {postCategories.map((c) => (
+              <a href={`/categories/${c.slug}`}>{c.emoji} {c.label}</a>
+            ))}
+          </div>
+        </header>
+
+        <TableOfContents headings={headings} />
+
+        <div class="article-body">
+          <slot />
+        </div>
+
+        <footer class="article-footer">
+          {tags && tags.length > 0 && (
+            <p>
+              标签：{tags.map((t, i) => (
+                <>
+                  <a href={`/categories/${t}`}>{t}</a>
+                  {i < tags.length - 1 ? " · " : ""}
+                </>
+              ))}
+            </p>
+          )}
+          <p>
+            <a href="/">← 返回首页</a>
+          </p>
+        </footer>
+      </article>
+    </main>
+    <Sidebar />
+  </div>
+</BaseLayout>

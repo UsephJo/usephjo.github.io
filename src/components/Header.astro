@@ -1,0 +1,19 @@
+---
+import { SITE_TITLE, NAV_LINKS } from "../consts";
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <nav>
+    <a href="/" class="site-title">{SITE_TITLE}</a>
+    {NAV_LINKS.map((link) => (
+      <a
+        href={link.href}
+        class:list={["nav-link", { active: currentPath === link.href }]}
+      >
+        {link.label}
+      </a>
+    ))}
+  </nav>
+</header>

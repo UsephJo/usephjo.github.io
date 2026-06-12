@@ -1,0 +1,67 @@
+---
+import { CATEGORIES, AUTHOR_BIO, SOCIAL_LINKS } from "../consts";
+
+interface Props {
+  categories?: { slug: string; count: number }[];
+  tags?: { tag: string; count: number }[];
+  currentCategory?: string;
+}
+
+const { categories = [], tags = [], currentCategory } = Astro.props;
+---
+
+<aside class="sidebar">
+  <section class="sidebar-section">
+    <p class="bio-text">{AUTHOR_BIO}</p>
+  </section>
+
+  <section class="sidebar-section">
+    <h3>分类</h3>
+    <ul>
+      <li>
+        <a href="/" class:list={[{ current: !currentCategory }]}>
+          全部
+        </a>
+      </li>
+      {CATEGORIES.map((cat) => {
+        const count = categories.find((c) => c.slug === cat.slug)?.count ?? 0;
+        return (
+          <li>
+            <a
+              href={`/categories/${cat.slug}`}
+              class:list={[{ current: currentCategory === cat.slug }]}
+            >
+              <span class="category-emoji">{cat.emoji}</span>
+              {cat.label}
+              {count > 0 && <span class="category-count">{count}</span>}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+  {tags.length > 0 && (
+    <section class="sidebar-section">
+      <h3>标签</h3>
+      <div class="tag-cloud">
+        {tags.map((t) => (
+          <a href={`/categories/${t.tag}`} class="tag-pill">
+            {t.tag}
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="sidebar-section">
+    <h3>订阅</h3>
+    <ul>
+      {SOCIAL_LINKS.map((link) => (
+        <li>
+          <a href={link.href}>{link.label}</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</aside>

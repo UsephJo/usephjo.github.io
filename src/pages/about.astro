@@ -1,0 +1,39 @@
+---
+import { AUTHOR, AUTHOR_BIO, SITE_TITLE } from "../consts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="关于">
+  <div class="page-layout">
+    <main class="main-content">
+      <article>
+        <h1>关于</h1>
+        <p>
+          这里是 <strong>{AUTHOR}</strong> 的个人博客。
+        </p>
+        <p>{AUTHOR_BIO}</p>
+        <p>
+          这个博客是我存放笔记、写作和思考的地方。内容来自 Obsidian
+          笔记、flomo 片段、公众号文章和朋友圈记录。
+        </p>
+        <p>
+          如果你喜欢这里的内容，可以通过{" "}
+          <a href="/rss.xml">RSS</a> 订阅更新。
+        </p>
+
+        <hr />
+
+        <h2>关于本站</h2>
+        <p>
+          本站使用 <a href="https://astro.build">Astro</a> 构建，部署在{" "}
+          <a href="https://pages.github.com">GitHub Pages</a>。
+          排版优先，无追踪、无广告。
+        </p>
+        <p>
+          支持 Obsidian 语法：<code>[[wikilink]]</code> 双链、callout
+          块、<mark>高亮</mark>等。
+        </p>
+      </article>
+    </main>
+  </div>
+</BaseLayout>

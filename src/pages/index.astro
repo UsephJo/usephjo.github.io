@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PostCard from "../components/PostCard.astro";
+import Sidebar from "../components/Sidebar.astro";
+
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+const notes = await getCollection("notes", ({ data }) => !data.draft);
+const moments = await getCollection("moments", ({ data }) => !data.draft);
+
+const allPosts = [...posts, ...notes, ...moments].sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+// Count categories
+const categoryCounts = new Map<string, number>();
+for (const post of allPosts) {
+  for (const cat of post.data.categories ?? []) {
+    categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
+  }
+}
+const categories = Array.from(categoryCounts.entries()).map(([slug, count]) => ({
+  slug,
+  count,
+}));
+
+// Count tags
+const tagCounts = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.data.tags ?? []) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = Array.from(tagCounts.entries())
+  .map(([tag, count]) => ({ tag, count }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 15);
+---
+
+<BaseLayout>
+  <div class="page-layout">
+    <main class="main-content">
+      {allPosts.length === 0 ? (
+        <p style="color: var(--color-text-muted);">
+          还没有文章。在 <code>src/content/posts/</code> 中创建第一篇 Markdown 文章吧。
+        </p>
+      ) : (
+        allPosts.filter(p => p.collection === 'posts').map((post) => (
+          <PostCard post={post} />
+        ))
+      )}
+    </main>
+    <Sidebar categories={categories} tags={tags} />
+  </div>
+</BaseLayout>

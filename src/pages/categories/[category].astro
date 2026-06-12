@@ -1,0 +1,85 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostCard from "../../components/PostCard.astro";
+import Sidebar from "../../components/Sidebar.astro";
+import { CATEGORIES } from "../../consts";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  const catSet = new Set<string>();
+  for (const post of posts) {
+    for (const cat of post.data.categories ?? []) {
+      catSet.add(cat);
+    }
+    for (const tag of post.data.tags ?? []) {
+      catSet.add(tag);
+    }
+  }
+  return Array.from(catSet).map((cat) => ({
+    params: { category: cat },
+  }));
+}
+
+const { category } = Astro.params;
+
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const filtered = allPosts
+  .filter(
+    (p) =>
+      (p.data.categories ?? []).includes(category!) ||
+      (p.data.tags ?? []).includes(category!)
+  )
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const catLabel = CATEGORIES.find((c) => c.slug === category);
+
+// Count categories for sidebar
+const categoryCounts = new Map<string, number>();
+for (const post of allPosts) {
+  for (const cat of post.data.categories ?? []) {
+    categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
+  }
+}
+const sidebarCategories = Array.from(categoryCounts.entries()).map(
+  ([slug, count]) => ({ slug, count })
+);
+
+const tagCounts = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.data.tags ?? []) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = Array.from(tagCounts.entries())
+  .map(([tag, count]) => ({ tag, count }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 15);
+---
+
+<BaseLayout
+  title={`${catLabel?.label ?? category} — 分类`}
+>
+  <div class="page-layout">
+    <main class="main-content">
+      <h1>
+        {catLabel?.emoji && <span>{catLabel.emoji} </span>}
+        {catLabel?.label ?? category}
+      </h1>
+      <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+        共 {filtered.length} 篇文章
+      </p>
+
+      {filtered.length === 0 ? (
+        <p style="color: var(--color-text-muted);">该分类下暂无文章。</p>
+      ) : (
+        filtered.map((post) => <PostCard post={post} />)
+      )}
+    </main>
+    <Sidebar
+      categories={sidebarCategories}
+      tags={tags}
+      currentCategory={category}
+    />
+  </div>
+</BaseLayout>
