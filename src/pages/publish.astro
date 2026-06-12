@@ -1,0 +1,271 @@
+---
+import { SITE_TITLE } from "../consts";
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>发布 — {SITE_TITLE}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafaf9; --text: #1c1917;
+      --muted: #78716c; --border: #e7e5e4;
+      --accent: #0d6efd;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917; --text: #fafaf9;
+        --muted: #a8a29e; --border: #292524;
+        --accent: #60a5fa;
+      }
+    }
+    body {
+      font-family: "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      max-width: 640px; margin: 0 auto; padding: 2rem 1.2rem;
+      font-size: 17px; line-height: 1.7;
+    }
+    h1 { font-size: 1rem; color: var(--muted); font-weight: 500; margin-bottom: 2rem; }
+    .setup { max-width: 400px; margin: 4rem auto; }
+    .setup p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .setup label { display: block; font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--muted); }
+    .setup input { width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--bg); color: var(--text); font-family: monospace; }
+    .setup button, .actions button { padding: 0.6rem 1.2rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.9rem; }
+    .setup button:hover, .actions button:hover { background: var(--border); }
+    .setup .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; }
+    .setup .hint a { color: var(--accent); }
+    .editor { display: none; }
+    .editor.active { display: block; }
+    .editor textarea {
+      width: 100%; min-height: 280px; padding: 1.2rem;
+      border: none; outline: none; resize: vertical;
+      font-family: inherit; font-size: 1.05rem; line-height: 1.8;
+      background: var(--bg); color: var(--text);
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .editor textarea:focus { box-shadow: 0 0 0 2px var(--accent); }
+    .editor textarea::placeholder { color: var(--muted); }
+    .meta-row {
+      display: flex; gap: 0.6rem; margin-top: 1rem;
+      align-items: center; flex-wrap: wrap;
+    }
+    .meta-row input {
+      padding: 0.5rem 0.7rem; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 0.85rem; background: var(--bg); color: var(--text);
+      flex: 1; min-width: 120px;
+    }
+    .meta-row input::placeholder { color: var(--muted); }
+    .meta-row label { font-size: 0.85rem; color: var(--muted); }
+    .actions { margin-top: 1.2rem; display: flex; gap: 0.6rem; align-items: center; }
+    .btn-primary { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; font-weight: 600; }
+    .btn-primary:hover { opacity: 0.85; }
+    .hint-kbd { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+    .hint-kbd kbd { background: var(--border); padding: 0.15em 0.45em; border-radius: 4px; font-size: 0.82em; }
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 0.9rem;
+      background: #1c1917; color: #fafaf9; z-index: 100; opacity: 0;
+      transition: opacity 0.2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .toast.error { background: #dc2626; }
+    .toast.success { background: #16a34a; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+    .logout { font-size: 0.8rem; color: var(--muted); cursor: pointer; background: none; border: none; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h1>发布</h1>
+
+<!-- Token Setup -->
+<div id="setup" class="setup">
+  <p>首次使用需要你的 GitHub 个人令牌。</p>
+  <label for="token">Personal Access Token</label>
+  <input id="token" type="password" placeholder="ghp_..." />
+  <p class="hint">
+    没有令牌？去 <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank">这里创建一个</a>，勾选 <strong>repo</strong> 权限即可。<br />令牌只会保存在你的浏览器中。
+  </p>
+  <button id="save-token">保存并开始使用</button>
+  <p id="token-msg" style="color:#dc2626;margin-top:0.5rem;display:none;"></p>
+</div>
+
+<!-- Editor -->
+<div id="editor" class="editor">
+  <textarea id="content" placeholder="第一行是标题，下面是正文..."></textarea>
+  <div class="meta-row">
+    <label>分类</label>
+    <input id="categories" placeholder="tech, life" />
+    <label>标签</label>
+    <input id="tags" placeholder="astro, blog" />
+  </div>
+  <div class="actions">
+    <button id="publish-btn" class="btn-primary">发布</button>
+    <span class="hint-kbd"><kbd>&#8984;</kbd> + <kbd>&#9166;</kbd></span>
+  </div>
+</div>
+
+<hr />
+<button id="logout-btn" class="logout">清除令牌（退出）</button>
+<div id="toast" class="toast"></div>
+
+<script>
+  const TOKEN_KEY = "publish_token";
+  const REPO = "UsephJo/usephjo.github.io";
+
+  const $setup = document.getElementById("setup");
+  const $editor = document.getElementById("editor");
+  const $content = document.getElementById("content");
+  const $categories = document.getElementById("categories");
+  const $tags = document.getElementById("tags");
+  const $publishBtn = document.getElementById("publish-btn");
+  const $saveToken = document.getElementById("save-token");
+  const $tokenInput = document.getElementById("token");
+  const $tokenMsg = document.getElementById("token-msg");
+  const $toast = document.getElementById("toast");
+  const $logout = document.getElementById("logout-btn");
+
+  function toast(text, type) {
+    $toast.className = "toast " + (type || "");
+    $toast.textContent = text;
+    requestAnimationFrame(() => $toast.classList.add("show"));
+    setTimeout(() => $toast.classList.remove("show"), 2800);
+  }
+
+  function hasToken() { return !!localStorage.getItem(TOKEN_KEY); }
+
+  function showEditor() {
+    $setup.style.display = "none";
+    $editor.classList.add("active");
+    $content.focus();
+  }
+
+  function showSetup() {
+    $setup.style.display = "block";
+    $editor.classList.remove("active");
+    $tokenInput.value = "";
+  }
+
+  // Init
+  if (hasToken()) {
+    showEditor();
+  }
+
+  $saveToken.addEventListener("click", () => {
+    const t = $tokenInput.value.trim();
+    if (!t) {
+      $tokenMsg.style.display = "block";
+      $tokenMsg.textContent = "请输入令牌";
+      return;
+    }
+    localStorage.setItem(TOKEN_KEY, t);
+    $tokenMsg.style.display = "none";
+    showEditor();
+  });
+
+  $logout.addEventListener("click", () => {
+    localStorage.removeItem(TOKEN_KEY);
+    showSetup();
+    toast("令牌已清除");
+  });
+
+  async function publish() {
+    const raw = $content.value.trim();
+    if (!raw) { toast("请输入内容", "error"); return; }
+
+    const lines = raw.split("\n");
+    const title = lines[0].trim();
+    const body = lines.slice(1).join("\n").trim();
+
+    if (!title) { toast("第一行不能为空（标题）", "error"); return; }
+    if (!body) { toast("正文不能为空", "error"); return; }
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { toast("令牌未保存，请刷新页面", "error"); showSetup(); return; }
+
+    const categories = $categories.value.split(",").map(s => s.trim()).filter(Boolean);
+    const tags = $tags.value.split(",").map(s => s.trim()).filter(Boolean);
+
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    let slug = title
+      .toLowerCase()
+      .replace(/[^\w一-鿿]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60)
+      || "untitled";
+    // Avoid duplicate filenames: add timestamp if needed
+    const filename = slug + ".md";
+
+    const catsYaml = categories.length > 0 ? `categories: [${categories.join(", ")}]` : "categories: []";
+    const tagsYaml = tags.length > 0 ? `tags: [${tags.join(", ")}]` : "tags: []";
+
+    const fm = [
+      "---",
+      `title: "${title.replace(/"/g, '\\"')}"`,
+      `date: ${dateStr}`,
+      catsYaml,
+      tagsYaml,
+      `description: "${body.slice(0, 100).replace(/"/g, '\\"').replace(/\n/g, ' ')}"`,
+      "---",
+      "",
+      body,
+      "",
+    ].join("\n");
+
+    $publishBtn.disabled = true;
+    $publishBtn.textContent = "发布中...";
+
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/contents/src/content/posts/${filename}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github+json",
+          },
+          body: JSON.stringify({
+            message: `发布: ${title}`,
+            content: btoa(String.fromCharCode(...new TextEncoder().encode(fm))),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
+
+      toast(`发布成功！稍后访问 /posts/${slug}/`, "success");
+      $content.value = "";
+      $categories.value = "";
+      $tags.value = "";
+      $content.focus();
+    } catch (e) {
+      toast(`发布失败: ${(e as Error).message}`, "error");
+    } finally {
+      $publishBtn.disabled = false;
+      $publishBtn.textContent = "发布";
+    }
+  }
+
+  $publishBtn.addEventListener("click", publish);
+
+  document.addEventListener("keydown", (e) => {
+    // Cmd+Enter
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (hasToken()) publish();
+    }
+  });
+</script>
+
+</body>
+</html>
