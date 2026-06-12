@@ -14,6 +14,7 @@ export async function GET() {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     site: SITE_URL,
+    stylesheet: "/rss.xsl",
     items: allItems.map((item) => ({
       title: item.data.title,
       description: item.data.description,
