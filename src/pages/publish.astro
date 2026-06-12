@@ -338,6 +338,9 @@ import { SITE_TITLE } from "../consts";
     $tokenInput.value = "";
   }
 
+  // Create renderer early — must be before any updatePreview() call
+  const renderer = new marked.Renderer();
+
   if (hasToken()) showEditor();
 
   $btnSave.addEventListener("click", () => {
@@ -392,9 +395,6 @@ import { SITE_TITLE } from "../consts";
     return text;
   }
 
-  // Configure marked
-  const renderer = new marked.Renderer();
-
   function updatePreview() {
     const raw = $content.value;
     if (!raw.trim()) {
@@ -406,7 +406,8 @@ import { SITE_TITLE } from "../consts";
       const html = marked.parse(processed, { renderer, breaks: true });
       $preview.innerHTML = html;
     } catch (e) {
-      // Silently fail - the preview will just show stale content
+      console.error("Preview render error:", e);
+      $preview.innerHTML = '<span style="color: var(--red);">预览渲染失败</span>';
     }
   }
 
