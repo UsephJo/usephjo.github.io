@@ -292,6 +292,10 @@ import { SITE_TITLE } from "../consts";
 
   const TK = "publish_token";
   const REPO = "UsephJo/usephjo.github.io";
+  const DRAFT_KEY = "publish_draft";
+  const DRAFT_CATS_KEY = "publish_draft_cats";
+  const DRAFT_TAGS_KEY = "publish_draft_tags";
+  const DRAFT_RSS_KEY = "publish_draft_rss";
 
   const $setup = document.getElementById("setup");
   const $editor = document.getElementById("editor");
@@ -324,6 +328,7 @@ import { SITE_TITLE } from "../consts";
   function showEditor() {
     $setup.style.display = "none";
     $editor.classList.add("active");
+    restoreDraft();
     $content.focus();
   }
 
@@ -346,7 +351,7 @@ import { SITE_TITLE } from "../consts";
   $tokenInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $btnSave.click(); });
 
   $btnLogout.addEventListener("click", () => {
-    if (confirm("确定清除令牌？")) { localStorage.removeItem(TK); showSetup(); toast("令牌已清除"); }
+    if (confirm("确定清除令牌？\n（草稿会被保留）")) { localStorage.removeItem(TK); showSetup(); toast("令牌已清除"); }
   });
 
   // ===== Live Preview =====
@@ -405,13 +410,49 @@ import { SITE_TITLE } from "../consts";
     }
   }
 
-  // Debounced preview update
+  // ===== Draft persistence =====
+  function saveDraft() {
+    localStorage.setItem(DRAFT_KEY, $content.value);
+    localStorage.setItem(DRAFT_CATS_KEY, $categories.value);
+    localStorage.setItem(DRAFT_TAGS_KEY, $tags.value);
+    localStorage.setItem(DRAFT_RSS_KEY, String($rssCheck.checked));
+  }
+
+  function restoreDraft() {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      $content.value = draft;
+      $charCount.textContent = `${draft.length} 字`;
+      updatePreview();
+    }
+    const cats = localStorage.getItem(DRAFT_CATS_KEY);
+    if (cats) $categories.value = cats;
+    const tags = localStorage.getItem(DRAFT_TAGS_KEY);
+    if (tags) $tags.value = tags;
+    const rss = localStorage.getItem(DRAFT_RSS_KEY);
+    if (rss !== null) $rssCheck.checked = rss !== "false";
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(DRAFT_CATS_KEY);
+    localStorage.removeItem(DRAFT_TAGS_KEY);
+    localStorage.removeItem(DRAFT_RSS_KEY);
+  }
+
+  // Debounced preview update + draft save
   let previewTimer: ReturnType<typeof setTimeout>;
   $content.addEventListener("input", () => {
     $charCount.textContent = `${$content.value.length} 字`;
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(updatePreview, 150);
+    previewTimer = setTimeout(() => {
+      updatePreview();
+      saveDraft();
+    }, 300);
   });
+  $categories.addEventListener("input", saveDraft);
+  $tags.addEventListener("input", saveDraft);
+  $rssCheck.addEventListener("change", saveDraft);
 
   // ===== Publish =====
   function toBase64(str: string): string {
@@ -500,6 +541,7 @@ import { SITE_TITLE } from "../consts";
       $tags.value = "";
       $rssCheck.checked = true;
       $charCount.textContent = "0 字";
+      clearDraft();
       $content.focus();
     } catch (e) {
       toast(`发布失败：${(e as Error).message}`, "error");
