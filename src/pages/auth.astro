@@ -20,18 +20,45 @@ const postsData = posts.map((p) => ({
     <div id="auth-setup" class="auth-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;">
       <div style="font-size:3rem;margin-bottom:1.5rem;">&#128274;</div>
       <h2 style="margin-bottom:0.5rem;">登录</h2>
-      <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:2rem;line-height:1.6;">
-        输入 GitHub Personal Access Token，<br />令牌仅保存在你的浏览器中。
+      <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:2rem;line-height:1.6;max-width:360px;">
+        令牌存放在浏览器本地，不会上传到服务器。<br />如果换了浏览器或清除了数据，需要重新创建。
       </p>
-      <div style="width:100%;max-width:380px;text-align:left;margin-bottom:1rem;">
-        <label for="token-input" style="display:block;font-size:0.82rem;font-weight:600;color:var(--color-text-muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;">Token</label>
-        <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" style="width:100%;padding:0.75rem 0.9rem;border:1px solid var(--color-border);border-radius:8px;font-size:0.92rem;background:var(--color-bg);color:var(--color-text);font-family:var(--font-mono);" />
-        <p style="font-size:0.75rem;color:var(--color-text-muted);margin-top:0.3rem;">
-          没有令牌？去 <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank" style="color:var(--color-accent);">这里创建一个</a>，勾选 repo 权限。
+
+      <!-- Step 1: Create token -->
+      <div class="setup-step" id="setup-step-1" style="width:100%;max-width:380px;">
+        <div class="setup-step-num">1</div>
+        <p style="font-weight:600;margin-bottom:0.5rem;">创建令牌</p>
+        <p style="font-size:0.82rem;color:var(--color-text-muted);margin-bottom:0.8rem;line-height:1.5;">
+          点击下方按钮打开 GitHub，直接点页面底部的 <strong>Generate token</strong> 即可。
+        </p>
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank" class="auth-btn auth-btn-primary" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;text-decoration:none;">&#128279; 打开 GitHub 创建令牌</a>
+        <p style="font-size:0.72rem;color:var(--color-text-muted);margin-top:0.5rem;">
+          已预填 repo 权限，直接点绿色按钮即可。令牌格式为 <code>ghp_xxxxxxxx</code>。
         </p>
       </div>
-      <button id="btn-save" class="auth-btn auth-btn-primary">验证并进入</button>
+
+      <!-- Step 2: Paste token -->
+      <div class="setup-step" id="setup-step-2" style="width:100%;max-width:380px;margin-top:1.8rem;">
+        <div class="setup-step-num">2</div>
+        <p style="font-weight:600;margin-bottom:0.3rem;">粘贴令牌</p>
+        <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" style="width:100%;padding:0.75rem 0.9rem;border:1px solid var(--color-border);border-radius:8px;font-size:0.92rem;background:var(--color-bg);color:var(--color-text);font-family:var(--font-mono);margin-top:0.5rem;" />
+        <p style="font-size:0.72rem;color:var(--color-text-muted);margin-top:0.3rem;">
+          GitHub 只显示一次令牌，创建后请立即复制。
+        </p>
+      </div>
+
+      <!-- Step 3: Verify & Save -->
+      <button id="btn-save" class="auth-btn auth-btn-primary" style="margin-top:1.5rem;">验证并进入</button>
       <p id="token-error" style="color:#dc2626;font-size:0.85rem;margin-top:0.5rem;display:none;"></p>
+      <p id="token-verifying" style="color:var(--color-text-muted);font-size:0.82rem;margin-top:0.5rem;display:none;">正在验证令牌...</p>
+
+      <details style="margin-top:1.5rem;width:100%;max-width:380px;text-align:left;">
+        <summary style="font-size:0.82rem;color:var(--color-text-muted);cursor:pointer;">找不到之前的令牌？</summary>
+        <p style="font-size:0.78rem;color:var(--color-text-muted);margin-top:0.5rem;line-height:1.6;">
+          GitHub 不会再次显示已创建的令牌，这是安全设计。如果令牌丢失，只需重新创建即可，旧令牌会自动失效。<br />
+          前往 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--color-accent);">GitHub Token 设置</a> 可删除旧令牌。
+        </p>
+      </details>
     </div>
 
     <!-- State B: Dashboard -->
@@ -160,6 +187,13 @@ const postsData = posts.map((p) => ({
   }
   .auth-btn-primary { background: var(--color-accent); color: #fff; width: 100%; max-width: 380px; }
   .auth-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .setup-step { text-align: left; }
+  .setup-step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--color-accent); color: #fff;
+    font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem;
+  }
   .auth-btn-ghost {
     background: transparent; color: var(--color-text-muted);
     border: 1px solid var(--color-border); font-weight: 500;
@@ -391,6 +425,7 @@ const postsData = posts.map((p) => ({
   const $tokenInput = document.getElementById("token-input") as HTMLInputElement;
   const $btnSave = document.getElementById("btn-save")!;
   const $tokenError = document.getElementById("token-error")!;
+  const $tokenVerifying = document.getElementById("token-verifying")!;
 
   // Dashboard
   const $btnNewPostSidebar = document.getElementById("btn-new-post-sidebar")!;
@@ -434,13 +469,49 @@ const postsData = posts.map((p) => ({
     toastTimer = setTimeout(() => $toast.classList.remove("show"), 3000);
   }
 
-  // ===== Setup → Dashboard =====
-  $btnSave.addEventListener("click", () => {
+  // ===== Setup → Verify → Dashboard =====
+  let verifying = false;
+  $btnSave.addEventListener("click", async () => {
+    if (verifying) return;
     const t = $tokenInput.value.trim();
     if (!t) { $tokenError.style.display = "block"; $tokenError.textContent = "请输入令牌"; return; }
-    localStorage.setItem(TK, t);
+    if (!t.startsWith("ghp_") && !t.startsWith("github_pat_")) {
+      $tokenError.style.display = "block";
+      $tokenError.textContent = "令牌格式不正确，应为 ghp_ 或 github_pat_ 开头";
+      return;
+    }
+
+    // Verify token against GitHub API
+    verifying = true;
+    $btnSave.disabled = true;
+    $btnSave.textContent = "验证中...";
     $tokenError.style.display = "none";
-    showState("dashboard");
+    $tokenVerifying.style.display = "block";
+
+    try {
+      const res = await fetch("https://api.github.com/user", {
+        headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" },
+      });
+      if (!res.ok) {
+        const status = res.status;
+        if (status === 401) throw new Error("令牌无效或已过期");
+        if (status === 403 && t.startsWith("github_pat_")) throw new Error("令牌权限不足，请确保勾选了 repo 权限");
+        throw new Error(`验证失败 (HTTP ${status})`);
+      }
+      const user = await res.json();
+      localStorage.setItem(TK, t);
+      $tokenVerifying.style.display = "none";
+      toast(`欢迎，${user.login}`, "success");
+      showState("dashboard");
+    } catch (e) {
+      $tokenVerifying.style.display = "none";
+      $tokenError.style.display = "block";
+      $tokenError.textContent = (e as Error).message;
+    } finally {
+      verifying = false;
+      $btnSave.disabled = false;
+      $btnSave.textContent = "验证并进入";
+    }
   });
   $tokenInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $btnSave.click(); });
 
