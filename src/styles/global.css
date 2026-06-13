@@ -347,6 +347,24 @@ th {
 .article-body {
   font-size: 1.05rem;
 }
+
+/* === Mixed content unified spacing === */
+.article-body > img,
+.article-body > p img,
+.article-body .link-card,
+.article-body .apple-music-embed,
+.article-body iframe,
+.article-body video,
+.article-body figure {
+  margin: 1.75rem 0;
+  display: block;
+}
+.article-body > img,
+.article-body > p img {
+  border-radius: 6px;
+  max-width: 100%;
+  height: auto;
+}
 .article-footer {
   margin-top: 4rem;
   padding-top: 1.5rem;

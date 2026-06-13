@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>登录 — usephjo's blog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafaf9; --text: #1c1917;
+      --muted: #78716c; --border: #e7e5e4;
+      --accent: #0d6efd; --accent-light: #eff6ff;
+      --red: #dc2626; --green: #16a34a;
+      --font-sans: "PingFang SC", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", monospace;
+      --note-bg: #e0f2fe; --warn-bg: #fef3c7;
+      --tip-bg: #dcfce7; --info-bg: #e0f2fe;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917; --text: #fafaf9;
+        --muted: #a8a29e; --border: #292524;
+        --accent: #60a5fa; --accent-light: #1e293b;
+        --note-bg: #0c2d48; --warn-bg: #422006;
+        --tip-bg: #052e16; --info-bg: #172554;
+      }
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== State containers ===== */
+    .state { display: none; }
+    .state.active { display: flex; }
+
+    /* ===== State A: Token Setup ===== */
+    #auth-setup {
+      flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh;
+      max-width: 420px; margin: 0 auto; padding: 2rem; text-align: center;
+    }
+    #auth-setup .setup-icon { font-size: 3rem; margin-bottom: 1.5rem; }
+    #auth-setup h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+    #auth-setup > p { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.6; }
+    #auth-setup .field { width: 100%; text-align: left; margin-bottom: 1rem; }
+    #auth-setup .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    #auth-setup .field input {
+      width: 100%; padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.92rem; background: var(--bg); color: var(--text);
+      font-family: var(--font-mono); transition: border-color 0.15s;
+    }
+    #auth-setup .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    #auth-setup .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+    #auth-setup .hint a { color: var(--accent); }
+
+    .btn {
+      padding: 0.7rem 1.6rem; border: none; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 0.5rem; }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      font-weight: 500; font-size: 0.82rem; padding: 0.4rem 0.8rem; cursor: pointer; font-family: inherit;
+    }
+    .btn-ghost:hover { background: var(--border); }
+
+    /* ===== State B: Dashboard ===== */
+    #auth-dashboard {
+      flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; gap: 1.5rem;
+    }
+    #auth-dashboard .back-home {
+      position: absolute; top: 2rem; left: 2rem;
+      color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    }
+    #auth-dashboard .back-home:hover { color: var(--text); }
+    #auth-dashboard .status-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.82rem; color: var(--green); font-weight: 500;
+    }
+    #auth-dashboard .status-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    }
+    #auth-dashboard .btn-new-post {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 700;
+      background: var(--text); color: var(--bg);
+      border: none; border-radius: 12px; cursor: pointer;
+      font-family: inherit; transition: all 0.2s;
+    }
+    #auth-dashboard .btn-new-post:hover { opacity: 0.85; transform: translateY(-2px); }
+    #auth-dashboard .btn-new-post .plus { font-size: 1.4rem; font-weight: 400; }
+
+    /* ===== State C: Editor ===== */
+    #auth-editor.active { flex-direction: column; height: 100vh; }
+
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.8rem 1.5rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 1rem; }
+    .top-bar h2 { font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+    .top-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 0.4rem; }
+
+    .split {
+      display: flex; flex: 1; min-height: 0; overflow: hidden;
+    }
+    .pane {
+      flex: 1; display: flex; flex-direction: column; min-width: 0;
+    }
+    .pane-left { border-right: 1px solid var(--border); }
+    .pane-label {
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted);
+      padding: 0.5rem 1.2rem; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pane-content {
+      flex: 1; overflow-y: auto; padding: 1.2rem;
+    }
+    .pane-content textarea {
+      width: 100%; height: 100%; border: none; outline: none; resize: none;
+      font-family: var(--font-mono);
+      font-size: 0.92rem; line-height: 1.75; background: var(--bg); color: var(--text);
+    }
+    .pane-content textarea::placeholder { color: var(--muted); opacity: 0.5; }
+
+    /* Editor toolbar */
+    .editor-toolbar {
+      display: flex; gap: 0.3rem; padding: 0.4rem 1.2rem;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .editor-toolbar button {
+      padding: 0.3rem 0.55rem; border: 1px solid var(--border);
+      border-radius: 5px; background: var(--bg); color: var(--muted);
+      cursor: pointer; font-size: 0.78rem; font-family: inherit;
+      display: flex; align-items: center; gap: 0.25rem;
+      transition: all 0.15s;
+    }
+    .editor-toolbar button:hover { background: var(--border); color: var(--text); }
+    .editor-toolbar button .icon { font-size: 0.9rem; }
+
+    /* Preview */
+    .preview {
+      font-size: 0.95rem; line-height: 1.8; word-break: break-word;
+    }
+    .preview h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem; line-height: 1.3; letter-spacing: -0.02em; }
+    .preview h2 { font-size: 1.2rem; font-weight: 700; margin: 2rem 0 0.8rem; line-height: 1.3; }
+    .preview h3 { font-size: 1.05rem; font-weight: 700; margin: 1.5rem 0 0.6rem; }
+    .preview p { margin: 0.8rem 0; }
+    .preview ul, .preview ol { padding-left: 1.5rem; margin: 0.8rem 0; }
+    .preview li { margin: 0.2rem 0; }
+    .preview strong { font-weight: 700; }
+    .preview em { font-style: italic; }
+    .preview blockquote:not(.callout) {
+      border-left: 3px solid var(--accent); padding: 0.4rem 1rem;
+      margin: 1rem 0; color: var(--muted); font-style: italic;
+    }
+    .preview code {
+      font-family: var(--font-mono);
+      font-size: 0.88em; background: #f0efed; padding: 0.15em 0.35em; border-radius: 3px;
+    }
+    @media (prefers-color-scheme: dark) { .preview code { background: #292524; } }
+    .preview pre {
+      background: #1c1917; color: #fafaf9; padding: 1rem 1.2rem; border-radius: 6px;
+      overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; line-height: 1.6;
+    }
+    .preview pre code { background: none; padding: 0; }
+    .preview mark { background: #fde68a; color: inherit; padding: 0.1em 0.2em; border-radius: 2px; }
+    .preview hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+    .preview a { color: var(--accent); text-decoration: none; }
+    .preview a.wikilink { color: var(--accent); }
+    .preview a.wikilink-broken { color: var(--muted); text-decoration: line-through; }
+    .preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    .preview th, .preview td { border: 1px solid var(--border); padding: 0.4rem 0.7rem; text-align: left; font-size: 0.88rem; }
+    .preview th { background: #f5f5f4; font-weight: 600; }
+    @media (prefers-color-scheme: dark) { .preview th { background: #292524; } }
+    .preview img { max-width: 100%; border-radius: 4px; }
+
+    /* Callout in preview */
+    .preview .callout {
+      border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0;
+      padding: 0.8rem 1rem; margin: 1rem 0; font-style: normal;
+    }
+    .preview .callout-title { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.3rem; display: block; }
+    .preview .callout-note { background: var(--note-bg); border-color: #0284c7; }
+    .preview .callout-warning { background: var(--warn-bg); border-color: #d97706; }
+    .preview .callout-tip { background: var(--tip-bg); border-color: #16a34a; }
+    .preview .callout-info { background: var(--info-bg); border-color: #2563eb; }
+    .preview .callout-danger { background: #fee2e2; border-color: #dc2626; }
+    @media (prefers-color-scheme: dark) { .preview .callout-danger { background: #450a0a; } }
+
+    /* Link card in preview */
+    .preview .link-card {
+      display: flex; gap: 0; align-items: stretch;
+      border: 1px solid var(--border); border-radius: 10px;
+      margin: 1rem 0; text-decoration: none; transition: all 0.15s;
+      overflow: hidden;
+    }
+    .preview .link-card:hover { border-color: var(--accent); }
+    .preview .link-card-thumb {
+      width: 100px; min-height: 80px; flex-shrink: 0;
+      background: var(--border); position: relative; overflow: hidden;
+    }
+    .preview .link-card-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; top: 0; left: 0;
+    }
+    .preview .link-card-body {
+      flex: 1; min-width: 0; padding: 0.75rem 0.9rem;
+      display: flex; flex-direction: column; justify-content: center; gap: 0.3rem;
+    }
+    .preview .link-card-body strong {
+      display: block; font-size: 0.88rem; line-height: 1.4;
+      color: var(--text);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .preview .link-card-body .link-card-desc {
+      font-size: 0.76rem; color: var(--muted);
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .preview .link-card-body .link-card-domain {
+      font-size: 0.7rem; color: var(--muted); opacity: 0.7;
+    }
+
+    /* Apple Music embed */
+    .preview .apple-music-embed {
+      border-radius: 12px; overflow: hidden; margin: 1rem 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .preview .apple-music-embed iframe {
+      width: 100%; height: 175px; border: none;
+    }
+
+    /* Bottom bar */
+    .bottom-bar {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.8rem 1.5rem; border-top: 1px solid var(--border);
+      flex-shrink: 0; flex-wrap: wrap;
+    }
+    .bottom-bar .opt-group { display: flex; align-items: center; gap: 0.4rem; }
+    .bottom-bar label { font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .bottom-bar input[type="text"] {
+      padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 0.82rem; background: var(--bg); color: var(--text);
+      font-family: inherit; width: 110px; transition: border-color 0.15s;
+    }
+    .bottom-bar input[type="text"]:focus { outline: none; border-color: var(--accent); }
+    .bottom-bar input[type="text"]::placeholder { color: var(--muted); opacity: 0.5; }
+    .spacer { flex: 1; }
+
+    .checkbox-wrap { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; user-select: none; }
+    .checkbox-wrap input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 17px; height: 17px; border: 2px solid var(--border);
+      border-radius: 4px; cursor: pointer; position: relative; transition: all 0.15s; flex-shrink: 0;
+    }
+    .checkbox-wrap input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+    .checkbox-wrap input[type="checkbox"]:checked::after {
+      content: ""; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .checkbox-wrap .check-label { font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+    .checkbox-wrap:hover .check-label { color: var(--text); }
+
+    .btn-publish {
+      padding: 0.5rem 1.4rem; background: var(--text); color: var(--bg);
+      border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-publish:hover { opacity: 0.85; }
+    .btn-publish:disabled { opacity: 0.4; cursor: not-allowed; }
+    .kbd-hint { font-size: 0.78rem; color: var(--muted); }
+    .kbd-hint kbd { background: var(--border); padding: 0.12em 0.45em; border-radius: 4px; font-size: 0.88em; font-family: inherit; }
+    .char-count { font-size: 0.78rem; color: var(--muted); }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(1rem);
+      padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9rem;
+      background: #1c1917; color: #fafaf9; z-index: 100;
+      opacity: 0; transition: all 0.25s ease; pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--red); }
+    .toast.success { background: var(--green); }
+    .toast a { color: #fff; text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .split { flex-direction: column; }
+      .pane-left { border-right: none; border-bottom: 1px solid var(--border); flex: 1 1 55%; }
+      .pane-left .pane-content textarea { min-height: 200px; }
+      .pane:last-child { flex: 1 1 45%; }
+      .bottom-bar { gap: 0.6rem; padding: 0.6rem 1rem; }
+      .bottom-bar input[type="text"] { width: 90px; }
+      #auth-dashboard .back-home { top: 1rem; left: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- State A: Token Setup -->
+<div id="auth-setup" class="state">
+  <div class="setup-icon">&#128274;</div>
+  <h2>登录</h2>
+  <p>输入 GitHub Personal Access Token，<br />令牌仅保存在你的浏览器中。</p>
+  <div class="field">
+    <label for="token-input">Token</label>
+    <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" />
+    <p class="hint">
+      没有令牌？去 <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank">这里创建一个</a>，勾选 repo 权限。
+    </p>
+  </div>
+  <button id="btn-save" class="btn btn-primary">验证并进入</button>
+  <p id="token-error" style="color:var(--red);font-size:0.85rem;margin-top:0.5rem;display:none;"></p>
+  <p style="margin-top:1.5rem;"><a href="/" style="color:var(--muted);font-size:0.85rem;">&larr; 返回首页</a></p>
+</div>
+
+<!-- State B: Dashboard -->
+<div id="auth-dashboard" class="state">
+  <a href="/" class="back-home">&larr; 返回首页</a>
+  <div class="status-badge"><span class="dot"></span> 已连接 GitHub</div>
+  <button id="btn-new-post" class="btn-new-post"><span class="plus">+</span> 新增内容</button>
+  <button id="btn-logout" class="btn-ghost" style="margin-top:0.5rem;">退出登录</button>
+</div>
+
+<!-- State C: Editor -->
+<div id="auth-editor" class="state">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <button id="btn-back-dashboard" class="btn-ghost">&larr; 返回</button>
+      <h2><span class="dot"></span>写点什么</h2>
+    </div>
+    <span style="font-size:0.78rem;color:var(--muted);" id="editor-filename"></span>
+  </div>
+
+  <div class="split">
+    <div class="pane pane-left">
+      <div class="pane-label">Markdown</div>
+      <div class="editor-toolbar">
+        <button id="btn-image" title="上传图片">
+          <span class="icon">&#128247;</span> 图片
+        </button>
+        <button id="btn-link-card" title="粘贴链接生成卡片">
+          <span class="icon">&#128279;</span> 链接卡片
+        </button>
+        <span style="font-size:0.72rem;color:var(--muted);margin-left:auto;line-height:2;">支持粘贴图片、Apple Music 嵌入代码、网页链接</span>
+      </div>
+      <div class="pane-content">
+        <textarea
+          id="content-area"
+          placeholder="第一行是标题&#10;空一行&#10;开始写正文..."
+        ></textarea>
+      </div>
+      <input type="file" id="file-input" accept="image/*" style="display:none" multiple />
+    </div>
+    <div class="pane">
+      <div class="pane-label">预览</div>
+      <div class="pane-content">
+        <div id="preview" class="preview" style="color: var(--muted); font-style: italic;">在左边输入内容，这里会实时渲染……</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="opt-group">
+      <label for="categories-input">分类</label>
+      <input id="categories-input" type="text" placeholder="tech, life" />
+    </div>
+    <div class="opt-group">
+      <label for="tags-input">标签</label>
+      <input id="tags-input" type="text" placeholder="astro, blog" />
+    </div>
+    <div class="spacer"></div>
+    <label class="checkbox-wrap" title="取消勾选后，文章保留在网站但不出现在 RSS 中">
+      <input type="checkbox" id="rss-check" checked />
+      <span class="check-label">推送到 RSS</span>
+    </label>
+    <button id="btn-publish" class="btn-publish">发布</button>
+    <span class="kbd-hint"><kbd>&#8984;</kbd> <kbd>Enter</kbd></span>
+    <span class="char-count" id="char-count">0 字</span>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  import { marked } from "marked";
+
+  const TK = "publish_token";
+  const REPO = "UsephJo/usephjo.github.io";
+  const DRAFT_KEY = "publish_draft";
+  const DRAFT_CATS_KEY = "publish_draft_cats";
+  const DRAFT_TAGS_KEY = "publish_draft_tags";
+  const DRAFT_RSS_KEY = "publish_draft_rss";
+
+  // State containers
+  const $setup = document.getElementById("auth-setup");
+  const $dashboard = document.getElementById("auth-dashboard");
+  const $editor = document.getElementById("auth-editor");
+
+  // Setup elements
+  const $tokenInput = document.getElementById("token-input") as HTMLInputElement;
+  const $btnSave = document.getElementById("btn-save");
+  const $tokenError = document.getElementById("token-error");
+
+  // Dashboard elements
+  const $btnNewPost = document.getElementById("btn-new-post");
+  const $btnLogout = document.getElementById("btn-logout");
+  const $btnBackDashboard = document.getElementById("btn-back-dashboard");
+
+  // Editor elements
+  const $content = document.getElementById("content-area") as HTMLTextAreaElement;
+  const $preview = document.getElementById("preview");
+  const $categories = document.getElementById("categories-input") as HTMLInputElement;
+  const $tags = document.getElementById("tags-input") as HTMLInputElement;
+  const $rssCheck = document.getElementById("rss-check") as HTMLInputElement;
+  const $btnPublish = document.getElementById("btn-publish") as HTMLButtonElement;
+  const $charCount = document.getElementById("char-count");
+  const $toast = document.getElementById("toast");
+  const $fileInput = document.getElementById("file-input") as HTMLInputElement;
+  const $btnImage = document.getElementById("btn-image");
+  const $btnLinkCard = document.getElementById("btn-link-card");
+  const $editorFilename = document.getElementById("editor-filename");
+
+  let toastTimer: ReturnType<typeof setTimeout>;
+  let publishing = false;
+
+  // ===== State management =====
+  function showState(state: "setup" | "dashboard" | "editor") {
+    [$setup, $dashboard, $editor].forEach((el) => el.classList.remove("active"));
+    if (state === "setup") $setup.classList.add("active");
+    else if (state === "dashboard") $dashboard.classList.add("active");
+    else if (state === "editor") $editor.classList.add("active");
+  }
+
+  function hasToken() { return !!localStorage.getItem(TK); }
+
+  // ===== Toast =====
+  function toast(text: string, type?: string) {
+    clearTimeout(toastTimer);
+    $toast.className = "toast " + (type ?? "");
+    $toast.innerHTML = text;
+    requestAnimationFrame(() => $toast.classList.add("show"));
+    toastTimer = setTimeout(() => $toast.classList.remove("show"), 3000);
+  }
+
+  // ===== Setup → Dashboard =====
+  $btnSave.addEventListener("click", () => {
+    const t = $tokenInput.value.trim();
+    if (!t) { $tokenError.style.display = "block"; $tokenError.textContent = "请输入令牌"; return; }
+    localStorage.setItem(TK, t);
+    $tokenError.style.display = "none";
+    showState("dashboard");
+  });
+
+  $tokenInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $btnSave.click(); });
+
+  // ===== Dashboard → Editor =====
+  $btnNewPost.addEventListener("click", () => {
+    showState("editor");
+    restoreDraft();
+    $content.focus();
+  });
+
+  // ===== Dashboard → Logout =====
+  $btnLogout.addEventListener("click", () => {
+    if (confirm("确定清除令牌？\n（草稿会被保留）")) {
+      localStorage.removeItem(TK);
+      showState("setup");
+      toast("令牌已清除");
+    }
+  });
+
+  // ===== Editor → Dashboard =====
+  $btnBackDashboard.addEventListener("click", () => {
+    if ($content.value.trim() && !confirm("返回面板将保留草稿，确定？")) return;
+    saveDraft();
+    showState("dashboard");
+  });
+
+  // ===== Cursor helper =====
+  function insertAtCursor(text: string) {
+    const start = $content.selectionStart;
+    const end = $content.selectionEnd;
+    const before = $content.value.slice(0, start);
+    const after = $content.value.slice(end);
+    $content.value = before + text + after;
+    $content.selectionStart = $content.selectionEnd = start + text.length;
+    $content.focus();
+    $content.dispatchEvent(new Event("input"));
+  }
+
+  // ===== Image upload =====
+  $btnImage.addEventListener("click", () => $fileInput.click());
+
+  $fileInput.addEventListener("change", () => {
+    const files = $fileInput.files;
+    if (!files || files.length === 0) return;
+    toast(`正在处理 ${files.length} 张图片...`);
+    let done = 0;
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const alt = file.name.replace(/\.[^.]+$/, "");
+        const md = `\n![${alt}](${reader.result as string})\n`;
+        insertAtCursor(md);
+        done++;
+        if (done === files.length) toast(`${done} 张图片已插入`, "success");
+      };
+      reader.onerror = () => toast(`读取 ${file.name} 失败`, "error");
+      reader.readAsDataURL(file);
+    }
+    $fileInput.value = "";
+  });
+
+  // ===== Image paste =====
+  $content.addEventListener("paste", (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const md = `\n![image](${reader.result as string})\n`;
+          insertAtCursor(md);
+          toast("图片已插入");
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  });
+
+  // ===== Link card =====
+  const URL_RE = /https?:\/\/[^\s<>"']+/gi;
+
+  function extractDomain(url: string): string {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+  }
+
+  function buildLinkCardHTML(url: string, meta?: { title?: string; desc?: string; image?: string }): string {
+    const domain = extractDomain(url);
+    const displayTitle = meta?.title || domain;
+    const displayDesc = meta?.desc || "";
+    const hasThumb = !!meta?.image;
+    const thumbHTML = hasThumb
+      ? `<span class="link-card-thumb"><img src="${meta!.image}" alt="" onerror="this.parentElement.style.display='none'" /></span>`
+      : "";
+    return [
+      `<a href="${url}" target="_blank" rel="noopener" class="link-card">`,
+      thumbHTML,
+      `<span class="link-card-body"><strong>${displayTitle}</strong>`,
+      displayDesc ? `<span class="link-card-desc">${displayDesc}</span>` : "",
+      `<span class="link-card-domain">${domain}</span></span>`,
+      `</a>`,
+    ].join("");
+  }
+
+  async function tryFetchMetadata(url: string): Promise<{ title?: string; desc?: string; image?: string } | null> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const ogImage = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+      const ogTitle = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+      const ogDesc = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const metaDesc = html.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+      return {
+        title: ogTitle?.[1] || titleMatch?.[1]?.trim() || undefined,
+        desc: ogDesc?.[1] || metaDesc?.[1] || undefined,
+        image: ogImage?.[1] || undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async function insertLinkCard(url: string) {
+    toast("正在获取页面信息...");
+    const meta = await tryFetchMetadata(url);
+    const card = buildLinkCardHTML(url, meta || undefined);
+    insertAtCursor(`\n${card}\n\n`);
+    if (meta?.title) toast("链接卡片已插入", "success");
+    else toast(`已插入链接卡片（${extractDomain(url)}，未能获取摘要）`, "success");
+  }
+
+  $btnLinkCard.addEventListener("click", () => {
+    const url = prompt("粘贴网页链接（支持公众号等）：");
+    if (url && URL_RE.test(url.trim())) {
+      insertLinkCard(url.trim());
+    } else if (url) {
+      toast("请输入有效的 URL", "error");
+    }
+  });
+
+  // Auto-detect URL / Apple Music on paste
+  $content.addEventListener("paste", (e: ClipboardEvent) => {
+    const text = e.clipboardData?.getData("text/plain");
+    if (!text || !text.trim()) return;
+    const trimmed = text.trim();
+
+    const appleMusic = detectAppleMusicEmbed(trimmed);
+    if (appleMusic) {
+      e.preventDefault();
+      insertAtCursor(`\n${appleMusic.html}\n\n`);
+      toast("Apple Music 嵌入已插入");
+      return;
+    }
+
+    if (URL_RE.test(trimmed) && trimmed.split(/\s+/).length === 1) {
+      e.preventDefault();
+      insertLinkCard(trimmed);
+    }
+  });
+
+  // ===== Apple Music =====
+  function detectAppleMusicEmbed(text: string): { html: string } | null {
+    const iframeMatch = text.match(/<iframe[^>]*src="(https:\/\/embed\.music\.apple\.com\/[^"]*)"[^>]*><\/iframe>/i);
+    if (iframeMatch) {
+      return {
+        html: `<div class="apple-music-embed"><iframe allow="autoplay *; encrypted-media *;" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="${iframeMatch[1]}"></iframe></div>`,
+      };
+    }
+    const shareMatch = text.match(/https:\/\/music\.apple\.com\/\S+/i);
+    if (shareMatch) {
+      const embedUrl = shareMatch[0].replace(/music\.apple\.com/, "embed.music.apple.com");
+      return {
+        html: `<div class="apple-music-embed"><iframe allow="autoplay *; encrypted-media *;" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="${embedUrl}"></iframe></div>`,
+      };
+    }
+    return null;
+  }
+
+  // ===== Live Preview =====
+  const renderer = new marked.Renderer();
+
+  function slugify(s: string): string {
+    return s.toLowerCase().replace(/[^\w一-鿿]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "untitled";
+  }
+
+  function preprocessObsidian(md: string): string {
+    let text = md;
+    text = text.replace(/==([^=\n]+)==/g, "<mark>$1</mark>");
+    text = text.replace(/!\[\[([^\]]+)\]\]/g, (_m: string, file: string) => {
+      return `<img src="/images/${file}" alt="${file}" />`;
+    });
+    text = text.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g,
+      (_m: string, page: string, _heading: string, alias: string) => {
+        const s = slugify(page);
+        const label = alias || page;
+        return `[${label}](/posts/${s}/)`;
+      }
+    );
+    text = text.replace(/^>\s*\[!(\w+)\]\s*(.*?)\n(.*?)(?=\n(?!>)|$)/gms,
+      (_m: string, type: string, title: string, body: string) => {
+        const t = type.toLowerCase();
+        const bodyClean = body.replace(/^>\s?/gm, "");
+        const titleHtml = title ? `<span class="callout-title">${title || t.toUpperCase()}</span>` : `<span class="callout-title">${t.toUpperCase()}</span>`;
+        return `<aside class="callout callout-${t}">${titleHtml}\n\n${bodyClean}\n\n</aside>`;
+      }
+    );
+    return text;
+  }
+
+  function updatePreview() {
+    const raw = $content.value;
+    if (!raw.trim()) {
+      $preview.innerHTML = '<span style="color: var(--muted); font-style: italic;">在左边输入内容，这里会实时渲染……</span>';
+      return;
+    }
+    try {
+      const processed = preprocessObsidian(raw);
+      const html = marked.parse(processed, { renderer, breaks: true }) as string;
+      $preview.innerHTML = html;
+    } catch (e) {
+      console.error("Preview render error:", e);
+      $preview.innerHTML = '<span style="color: var(--red);">预览渲染失败</span>';
+    }
+  }
+
+  // ===== Draft persistence =====
+  function saveDraft() {
+    localStorage.setItem(DRAFT_KEY, $content.value);
+    localStorage.setItem(DRAFT_CATS_KEY, $categories.value);
+    localStorage.setItem(DRAFT_TAGS_KEY, $tags.value);
+    localStorage.setItem(DRAFT_RSS_KEY, String($rssCheck.checked));
+  }
+
+  function restoreDraft() {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      $content.value = draft;
+      $charCount.textContent = `${draft.length} 字`;
+      updatePreview();
+    }
+    const cats = localStorage.getItem(DRAFT_CATS_KEY);
+    if (cats) $categories.value = cats;
+    const tags = localStorage.getItem(DRAFT_TAGS_KEY);
+    if (tags) $tags.value = tags;
+    const rss = localStorage.getItem(DRAFT_RSS_KEY);
+    if (rss !== null) $rssCheck.checked = rss !== "false";
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(DRAFT_CATS_KEY);
+    localStorage.removeItem(DRAFT_TAGS_KEY);
+    localStorage.removeItem(DRAFT_RSS_KEY);
+  }
+
+  let previewTimer: ReturnType<typeof setTimeout>;
+  $content.addEventListener("input", () => {
+    $charCount.textContent = `${$content.value.length} 字`;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => {
+      updatePreview();
+      saveDraft();
+    }, 300);
+  });
+  $categories.addEventListener("input", saveDraft);
+  $tags.addEventListener("input", saveDraft);
+  $rssCheck.addEventListener("change", saveDraft);
+
+  // ===== Publish =====
+  function toBase64(str: string): string {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  async function publish() {
+    if (publishing) return;
+    const raw = $content.value;
+    if (!raw.trim()) { toast("请输入内容", "error"); return; }
+
+    const lines = raw.split("\n");
+    const title = lines[0].trim();
+    let bodyStart = 1;
+    while (bodyStart < lines.length && lines[bodyStart].trim() === "") bodyStart++;
+    const body = lines.slice(bodyStart).join("\n").trim();
+
+    if (!title) { toast("第一行不能为空（标题）", "error"); return; }
+    if (!body) { toast("正文不能为空", "error"); return; }
+
+    const token = localStorage.getItem(TK);
+    if (!token) { toast("令牌丢失，请重新登录", "error"); showState("setup"); return; }
+
+    const cats = $categories.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+    const tags = $tags.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+    const rss = $rssCheck.checked;
+
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    const slug = slugify(title);
+    const ts = now.getTime().toString(36);
+    const filename = `${slug}-${ts}.md`;
+
+    const esc = (s: string) => s.replace(/"/g, '\\"');
+    const catsYaml = cats.length ? `categories: [${cats.join(", ")}]` : "categories: []";
+    const tagsYaml = tags.length ? `tags: [${tags.join(", ")}]` : "tags: []";
+    const desc = esc(body.replace(/\n/g, " ").slice(0, 120));
+
+    const fm = [
+      "---",
+      `title: "${esc(title)}"`,
+      `date: ${dateStr}`,
+      catsYaml,
+      tagsYaml,
+      `rss: ${rss}`,
+      `description: "${desc}"`,
+      "---",
+      "",
+      body,
+      "",
+    ].join("\n");
+
+    publishing = true;
+    $btnPublish.disabled = true;
+    $btnPublish.textContent = "发布中...";
+
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/contents/src/content/posts/${filename}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github+json",
+          },
+          body: JSON.stringify({
+            message: `发布: ${title}`,
+            content: toBase64(fm),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const status = res.status;
+        if (status === 401) {
+          throw new Error("令牌无效或已过期，请重新设置");
+        } else if (status === 403) {
+          throw new Error("令牌权限不足，创建时需勾选 repo 权限");
+        } else {
+          throw new Error((err as any).message || `HTTP ${status}`);
+        }
+      }
+
+      toast(`已发布！稍后访问 <a href="/posts/${slug}-${ts}/">/${slug}-${ts}</a>`, "success");
+      $content.value = "";
+      $preview.innerHTML = '<span style="color: var(--muted); font-style: italic;">在左边输入内容，这里会实时渲染……</span>';
+      $categories.value = "";
+      $tags.value = "";
+      $rssCheck.checked = true;
+      $charCount.textContent = "0 字";
+      $editorFilename.textContent = "";
+      clearDraft();
+      $content.focus();
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg.includes("令牌")) {
+        toast(`发布失败：${msg}。<br/><a href="#" id="toast-reset-token" style="text-decoration:underline;">点此重新设置令牌</a>`, "error");
+        setTimeout(() => {
+          const link = document.getElementById("toast-reset-token");
+          if (link) link.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            localStorage.removeItem(TK);
+            showState("setup");
+            toast("请粘贴新的令牌");
+          });
+        }, 50);
+      } else {
+        toast(`发布失败：${msg}`, "error");
+      }
+    } finally {
+      publishing = false;
+      $btnPublish.disabled = false;
+      $btnPublish.textContent = "发布";
+    }
+  }
+
+  $btnPublish.addEventListener("click", publish);
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (hasToken() && $editor.classList.contains("active")) publish();
+    }
+  });
+
+  // ===== Init =====
+  if (hasToken()) {
+    showState("dashboard");
+  } else {
+    showState("setup");
+  }
+</script>
+
+</body>
+</html>
