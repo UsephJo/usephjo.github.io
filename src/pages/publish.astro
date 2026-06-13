@@ -104,6 +104,55 @@ import { SITE_TITLE } from "../consts";
     }
     .pane-content textarea::placeholder { color: var(--muted); opacity: 0.5; }
 
+    /* ===== Editor Toolbar ===== */
+    .editor-toolbar {
+      display: flex; gap: 0.3rem; padding: 0.4rem 1.2rem;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .editor-toolbar button {
+      padding: 0.3rem 0.55rem; border: 1px solid var(--border);
+      border-radius: 5px; background: var(--bg); color: var(--muted);
+      cursor: pointer; font-size: 0.78rem; font-family: inherit;
+      display: flex; align-items: center; gap: 0.25rem;
+      transition: all 0.15s;
+    }
+    .editor-toolbar button:hover { background: var(--border); color: var(--text); }
+    .editor-toolbar button .icon { font-size: 0.9rem; }
+
+    /* ===== Link Card in Preview ===== */
+    .preview .link-card {
+      display: flex; gap: 0.8rem; align-items: center;
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.9rem 1rem; margin: 1rem 0;
+      text-decoration: none; transition: border-color 0.15s;
+    }
+    .preview .link-card:hover { border-color: var(--accent); }
+    .preview .link-card-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: var(--border); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .preview .link-card-info { flex: 1; min-width: 0; }
+    .preview .link-card-info strong {
+      display: block; font-size: 0.9rem; margin-bottom: 0.15rem;
+      color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .preview .link-card-info span {
+      font-size: 0.78rem; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+    }
+    .preview .link-card-arrow { color: var(--muted); flex-shrink: 0; }
+
+    /* ===== Apple Music embed ===== */
+    .preview .apple-music-embed {
+      border-radius: 12px; overflow: hidden; margin: 1rem 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .preview .apple-music-embed iframe {
+      width: 100%; height: 175px; border: none;
+    }
+
     /* ===== Preview Pane ===== */
     .preview {
       font-size: 0.95rem; line-height: 1.8;
@@ -249,6 +298,15 @@ import { SITE_TITLE } from "../consts";
   <div class="split">
     <div class="pane pane-left">
       <div class="pane-label">Markdown</div>
+      <div class="editor-toolbar">
+        <button id="btn-image" title="上传图片">
+          <span class="icon">&#128247;</span> 图片
+        </button>
+        <button id="btn-link-card" title="粘贴链接生成卡片">
+          <span class="icon">&#128279;</span> 链接卡片
+        </button>
+        <span style="font-size:0.72rem;color:var(--muted);margin-left:auto;line-height:2;">支持粘贴图片、Apple Music 嵌入代码、网页链接</span>
+      </div>
       <div class="pane-content">
         <textarea
           id="content-area"
@@ -256,6 +314,7 @@ import { SITE_TITLE } from "../consts";
           autofocus
         ></textarea>
       </div>
+      <input type="file" id="file-input" accept="image/*" style="display:none" multiple />
     </div>
     <div class="pane">
       <div class="pane-label">预览</div>
@@ -312,6 +371,10 @@ import { SITE_TITLE } from "../consts";
   const $charCount = document.getElementById("char-count");
   const $toast = document.getElementById("toast");
 
+  const $fileInput = document.getElementById("file-input");
+  const $btnImage = document.getElementById("btn-image");
+  const $btnLinkCard = document.getElementById("btn-link-card");
+
   let toastTimer: ReturnType<typeof setTimeout>;
   let publishing = false;
 
@@ -356,6 +419,170 @@ import { SITE_TITLE } from "../consts";
   $btnLogout.addEventListener("click", () => {
     if (confirm("确定清除令牌？\n（草稿会被保留）")) { localStorage.removeItem(TK); showSetup(); toast("令牌已清除"); }
   });
+
+  // ===== Cursor helper =====
+  function insertAtCursor(text: string) {
+    const start = $content.selectionStart;
+    const end = $content.selectionEnd;
+    const before = $content.value.slice(0, start);
+    const after = $content.value.slice(end);
+    $content.value = before + text + after;
+    $content.selectionStart = $content.selectionEnd = start + text.length;
+    $content.focus();
+    $content.dispatchEvent(new Event("input"));
+  }
+
+  // ===== Image upload =====
+  $btnImage.addEventListener("click", () => $fileInput.click());
+
+  $fileInput.addEventListener("change", () => {
+    const files = $fileInput.files;
+    if (!files || files.length === 0) return;
+    toast(`正在处理 ${files.length} 张图片...`);
+    let done = 0;
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const alt = file.name.replace(/\.[^.]+$/, "");
+        const md = `\n![${alt}](${reader.result as string})\n`;
+        insertAtCursor(md);
+        done++;
+        if (done === files.length) toast(`${done} 张图片已插入`, "success");
+      };
+      reader.onerror = () => toast(`读取 ${file.name} 失败`, "error");
+      reader.readAsDataURL(file);
+    }
+    $fileInput.value = "";
+  });
+
+  // ===== Image paste handler =====
+  $content.addEventListener("paste", (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const md = `\n![image](${reader.result as string})\n`;
+          insertAtCursor(md);
+          toast("图片已插入");
+        };
+        reader.readAsDataURL(file);
+        return; // only handle first image
+      }
+    }
+  });
+
+  // ===== URL detection and link card =====
+  const URL_RE = /https?:\/\/[^\s<>"']+/gi;
+
+  function extractDomain(url: string): string {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+  }
+
+  function getFavicon(url: string): string {
+    try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`; }
+    catch { return ""; }
+  }
+
+  function buildLinkCardHTML(url: string, title?: string, desc?: string): string {
+    const domain = extractDomain(url);
+    const displayTitle = title || domain;
+    const displayDesc = desc || url;
+    const favicon = getFavicon(url);
+    return [
+      `<a href="${url}" target="_blank" rel="noopener" class="link-card">`,
+      `<span class="link-card-icon"><img src="${favicon}" alt="" style="width:20px;height:20px" onerror="this.style.display='none'"/></span>`,
+      `<span class="link-card-info"><strong>${displayTitle}</strong><span>${displayDesc}</span></span>`,
+      `<span class="link-card-arrow">&#8599;</span>`,
+      `</a>`,
+    ].join("");
+  }
+
+  async function tryFetchMetadata(url: string): Promise<{ title?: string; desc?: string } | null> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const ogTitle = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+      const ogDesc = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+      const metaDesc = html.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+      return {
+        title: ogTitle?.[1] || titleMatch?.[1]?.trim() || undefined,
+        desc: ogDesc?.[1] || metaDesc?.[1] || undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async function insertLinkCard(url: string) {
+    toast("正在获取页面信息...");
+    const meta = await tryFetchMetadata(url);
+    const card = buildLinkCardHTML(url, meta?.title, meta?.desc);
+    insertAtCursor(`\n${card}\n\n`);
+    if (meta?.title) toast("链接卡片已插入", "success");
+    else toast(`已插入链接卡片（${extractDomain(url)}）`, "success");
+  }
+
+  $btnLinkCard.addEventListener("click", () => {
+    const url = prompt("粘贴网页链接（支持公众号等）：");
+    if (url && URL_RE.test(url.trim())) {
+      insertLinkCard(url.trim());
+    } else if (url) {
+      toast("请输入有效的 URL", "error");
+    }
+  });
+
+  // Auto-detect URL / Apple Music on paste
+  $content.addEventListener("paste", (e: ClipboardEvent) => {
+    // NOTE: image paste is handled in a separate listener above
+    const text = e.clipboardData?.getData("text/plain");
+    if (!text || !text.trim()) return;
+    const trimmed = text.trim();
+
+    // Apple Music embed code or share link
+    const appleMusic = detectAppleMusicEmbed(trimmed);
+    if (appleMusic) {
+      e.preventDefault();
+      insertAtCursor(`\n${appleMusic.html}\n\n`);
+      toast("Apple Music 嵌入已插入");
+      return;
+    }
+
+    // Single URL → link card
+    if (URL_RE.test(trimmed) && trimmed.split(/\s+/).length === 1) {
+      e.preventDefault();
+      insertLinkCard(trimmed);
+    }
+  });
+
+  // ===== Apple Music embed detection =====
+  function detectAppleMusicEmbed(text: string): { html: string } | null {
+    const iframeMatch = text.match(/<iframe[^>]*src="(https:\/\/embed\.music\.apple\.com\/[^"]*)"[^>]*><\/iframe>/i);
+    if (iframeMatch) {
+      return {
+        html: `<div class="apple-music-embed"><iframe allow="autoplay *; encrypted-media *;" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="${iframeMatch[1]}"></iframe></div>`,
+      };
+    }
+    // Also detect the Apple Music share URL
+    const shareMatch = text.match(/https:\/\/music\.apple\.com\/\S+/i);
+    if (shareMatch) {
+      const embedUrl = shareMatch[0].replace(/music\.apple\.com/, "embed.music.apple.com");
+      return {
+        html: `<div class="apple-music-embed"><iframe allow="autoplay *; encrypted-media *;" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="${embedUrl}"></iframe></div>`,
+      };
+    }
+    return null;
+  }
 
   // ===== Live Preview =====
   function slugify(s: string): string {
