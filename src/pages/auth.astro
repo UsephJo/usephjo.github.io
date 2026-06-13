@@ -172,11 +172,8 @@ const postsData = posts.map((p) => ({
   </div>
 
   <div id="toast" class="auth-toast"></div>
-</BaseLayout>
 
-<script type="application/json" id="posts-data">
-{JSON.stringify(postsData)}
-</script>
+<div id="posts-data" style="display:none" data-posts={JSON.stringify(postsData)}></div>
 
 <style is:global>
   /* ===== Auth shared ===== */
@@ -409,11 +406,8 @@ const postsData = posts.map((p) => ({
   const DRAFT_RSS_KEY = "publish_draft_rss";
 
   // Build-time posts data
-  const postsEl = document.getElementById("posts-data");
-  const ALL_POSTS: Array<{
-    id: string; title: string; date: string;
-    categories: string[]; tags: string[]; rss: boolean; slug: string;
-  }> = postsEl ? JSON.parse(postsEl.textContent || "[]") : [];
+  const postsDataEl = document.getElementById("posts-data");
+  const ALL_POSTS = JSON.parse(postsDataEl?.getAttribute("data-posts") || "[]");
 
   // State containers
   const $setup = document.getElementById("auth-setup")!;
@@ -471,9 +465,11 @@ const postsData = posts.map((p) => ({
 
   // ===== Setup → Verify → Dashboard =====
   let verifying = false;
-  $btnSave.addEventListener("click", async () => {
-    if (verifying) return;
+  $btnSave.addEventListener("click", () => {
+    console.log("[auth] btn-save clicked");
+    if (verifying) { console.log("[auth] already verifying, skip"); return; }
     const t = $tokenInput.value.trim();
+    console.log("[auth] token length:", t.length, "starts with ghp_:", t.startsWith("ghp_"));
     if (!t) { $tokenError.style.display = "block"; $tokenError.textContent = "请输入令牌"; return; }
     if (!t.startsWith("ghp_") && !t.startsWith("github_pat_")) {
       $tokenError.style.display = "block";
@@ -487,31 +483,39 @@ const postsData = posts.map((p) => ({
     $btnSave.textContent = "验证中...";
     $tokenError.style.display = "none";
     $tokenVerifying.style.display = "block";
+    console.log("[auth] fetching GitHub API...");
 
-    try {
-      const res = await fetch("https://api.github.com/user", {
-        headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" },
+    fetch("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" },
+    })
+      .then((res) => {
+        console.log("[auth] response status:", res.status);
+        if (!res.ok) {
+          const status = res.status;
+          if (status === 401) throw new Error("令牌无效或已过期");
+          if (status === 403 && t.startsWith("github_pat_")) throw new Error("令牌权限不足，请确保勾选了 repo 权限");
+          throw new Error(`验证失败 (HTTP ${status})`);
+        }
+        return res.json();
+      })
+      .then((user) => {
+        console.log("[auth] logged in as:", user.login);
+        localStorage.setItem(TK, t);
+        $tokenVerifying.style.display = "none";
+        toast(`欢迎，${user.login}`, "success");
+        showState("dashboard");
+      })
+      .catch((e) => {
+        console.error("[auth] verify error:", e);
+        $tokenVerifying.style.display = "none";
+        $tokenError.style.display = "block";
+        $tokenError.textContent = e.message;
+      })
+      .finally(() => {
+        verifying = false;
+        $btnSave.disabled = false;
+        $btnSave.textContent = "验证并进入";
       });
-      if (!res.ok) {
-        const status = res.status;
-        if (status === 401) throw new Error("令牌无效或已过期");
-        if (status === 403 && t.startsWith("github_pat_")) throw new Error("令牌权限不足，请确保勾选了 repo 权限");
-        throw new Error(`验证失败 (HTTP ${status})`);
-      }
-      const user = await res.json();
-      localStorage.setItem(TK, t);
-      $tokenVerifying.style.display = "none";
-      toast(`欢迎，${user.login}`, "success");
-      showState("dashboard");
-    } catch (e) {
-      $tokenVerifying.style.display = "none";
-      $tokenError.style.display = "block";
-      $tokenError.textContent = (e as Error).message;
-    } finally {
-      verifying = false;
-      $btnSave.disabled = false;
-      $btnSave.textContent = "验证并进入";
-    }
   });
   $tokenInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $btnSave.click(); });
 
@@ -1003,3 +1007,4 @@ const postsData = posts.map((p) => ({
     showState("setup");
   }
 </script>
+</BaseLayout>
