@@ -14,7 +14,6 @@ export const CATEGORIES: { slug: string; label: string; emoji: string }[] = [
 export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/", label: "首页" },
   { href: "/about", label: "关于" },
-  { href: "/auth", label: "登录" },
 ];
 
 export const SOCIAL_LINKS: { href: string; label: string }[] = [
