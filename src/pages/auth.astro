@@ -546,12 +546,57 @@ const postsData = posts.map((p) => ({
     $settingAuthor.value = getAuthor();
   }
 
-  $btnSaveSettings.addEventListener("click", () => {
-    localStorage.setItem(SK_TITLE, $settingTitle.value.trim() || getSiteTitle());
-    localStorage.setItem(SK_URL, $settingUrl.value.trim() || getSiteUrl());
-    localStorage.setItem(SK_AUTHOR, $settingAuthor.value.trim() || getAuthor());
+  $btnSaveSettings.addEventListener("click", async () => {
+    const title = $settingTitle.value.trim() || getSiteTitle();
+    const url = $settingUrl.value.trim() || getSiteUrl();
+    const author = $settingAuthor.value.trim() || getAuthor();
+    localStorage.setItem(SK_TITLE, title);
+    localStorage.setItem(SK_URL, url);
+    localStorage.setItem(SK_AUTHOR, author);
     applySiteSettings();
-    toast("设置已保存", "success");
+
+    // Push to consts.ts via GitHub API
+    const token = localStorage.getItem(TK);
+    if (!token) { toast("设置已保存到本地（令牌丢失，未同步到仓库）", "success"); return; }
+
+    try {
+      const constsPath = "src/consts.ts";
+      const getRes = await fetch(
+        `https://api.github.com/repos/${getRepo()}/contents/${constsPath}`,
+        { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
+      );
+      if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+      const getData = await getRes.json();
+      const sha = getData.sha;
+      let content = b64ToUtf8(getData.content);
+
+      // Replace values in consts.ts
+      content = content.replace(/(SITE_TITLE\s*=\s*)"[^"]*"/, `$1"${title.replace(/"/g, '\\"')}"`);
+      content = content.replace(/(AUTHOR\s*=\s*)"[^"]*"/, `$1"${author.replace(/"/g, '\\"')}"`);
+      content = content.replace(/(SITE_URL\s*=\s*)"[^"]*"/, `$1"${url.replace(/"/g, '\\"')}"`);
+
+      const putRes = await fetch(
+        `https://api.github.com/repos/${getRepo()}/contents/${constsPath}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github+json",
+          },
+          body: JSON.stringify({
+            message: "更新站点设置",
+            content: toBase64(content),
+            sha,
+          }),
+        }
+      );
+      if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
+      toast("设置已保存，站点将在几秒后更新", "success");
+    } catch (e) {
+      console.error("[auth] save settings to repo:", e);
+      toast("设置已保存到本地（同步仓库失败）", "success");
+    }
   });
 
   // Dashboard

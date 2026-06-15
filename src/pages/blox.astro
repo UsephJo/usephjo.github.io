@@ -77,35 +77,24 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <li>
               <span class="blox-step-num">2</span>
               <span>
-                <strong>修改站点信息（替换 usephjo）</strong>
+                <strong>启用 Pages</strong>
                 <span class="blox-step-detail">
-                  在你 fork 的仓库中，打开 <code>src/consts.ts</code>，点编辑（铅笔图标），
-                  将 <code>usephjo</code>、<code>usephjo's blog</code>、<code>https://usephjo.github.io</code>
-                  分别替换为你的用户名、博客名和博客地址。共改 5 处。
+                  在你的仓库中：Settings → Pages → Source 选 GitHub Actions。等待 workflow 运行完成 ✓。
                 </span>
               </span>
             </li>
             <li>
               <span class="blox-step-num">3</span>
               <span>
-                <strong>启用 Pages</strong>
-                <span class="blox-step-detail">
-                  Settings → Pages，Source 选 GitHub Actions。等待 Actions 中 workflow 变绿 ✓。
-                </span>
-              </span>
-            </li>
-            <li>
-              <span class="blox-step-num">4</span>
-              <span>
-                <strong>创建令牌</strong>
+                <strong>创建令牌并登录</strong>
                 <span class="blox-step-detail">
                   打开 <a href="https://github.com/settings/tokens/new?scopes=repo&description=blox-publish" target="_blank">GitHub 令牌页</a>，
-                  点击 Generate token，复制令牌（仅显示一次）。
+                  点击 Generate token，复制令牌。前往你的博客粘贴令牌登录，站点信息会自动匹配你的 GitHub 用户名。
                 </span>
               </span>
             </li>
           </ol>
-          <a id="btn-go-blog" class="blox-btn-primary" href="#" target="_blank">前往我的博客，粘贴令牌登录</a>
+          <a id="btn-go-blog" class="blox-btn-primary" href="#" target="_blank">前往我的博客</a>
         </div>
 
         <p id="reg-error" class="blox-error" style="display:none;"></p>
