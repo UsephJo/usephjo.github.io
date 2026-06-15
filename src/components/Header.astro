@@ -32,3 +32,9 @@ const currentPath = Astro.url.pathname;
     text-decoration: none;
   }
 </style>
+<script>
+  if (localStorage.getItem("publish_token")) {
+    const el = document.querySelector(".nav-login");
+    if (el) el.style.display = "none";
+  }
+</script>

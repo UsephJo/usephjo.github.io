@@ -1,0 +1,335 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Blox">
+  <div id="blox-root">
+    <!-- Landing: choose login or register -->
+    <div id="blox-landing" class="blox-state">
+      <div class="blox-card">
+        <h1 class="blox-brand">Blox</h1>
+        <p class="blox-tagline">一个人的博客，十分钟上线。</p>
+        <div class="blox-choices">
+          <button id="btn-go-login" class="blox-choice">
+            <span class="blox-choice-label">登录</span>
+            <span class="blox-choice-hint">已有博客，前往写作</span>
+          </button>
+          <button id="btn-go-register" class="blox-choice">
+            <span class="blox-choice-label">注册</span>
+            <span class="blox-choice-hint">从零开始，创建博客</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login: existing user -->
+    <div id="blox-login" class="blox-state" style="display:none;">
+      <div class="blox-card">
+        <h1 class="blox-title">登录</h1>
+        <p class="blox-desc">
+          输入 GitHub 用户名，前往你已有的 Blox 博客管理页。
+        </p>
+        <div class="blox-field">
+          <span class="blox-field-label">GitHub 用户名</span>
+          <input id="login-username" type="text" placeholder="usephjo" autocomplete="off" />
+        </div>
+        <p id="login-preview" class="blox-preview" style="display:none;">
+          你的博客地址：<strong id="login-url-text"></strong>
+        </p>
+        <button id="btn-login-go" class="blox-btn-primary">前往我的博客</button>
+        <p id="login-error" class="blox-error" style="display:none;"></p>
+        <button id="btn-back-from-login" class="blox-btn-back">← 返回</button>
+      </div>
+    </div>
+
+    <!-- Register: new user -->
+    <div id="blox-register" class="blox-state" style="display:none;">
+      <div class="blox-card">
+        <h1 class="blox-title">注册</h1>
+        <p class="blox-desc">
+          输入 GitHub 用户名确认博客地址，然后按步骤完成设置。你的博客将完全是你的——不含任何模板作者信息。
+        </p>
+
+        <div id="reg-step-1" class="blox-reg-step">
+          <div class="blox-field">
+            <span class="blox-field-label">GitHub 用户名</span>
+            <input id="reg-username" type="text" placeholder="usephjo" autocomplete="off" />
+          </div>
+          <p id="reg-url-preview" class="blox-preview" style="display:none;">
+            博客地址预览：<strong id="reg-url-text"></strong>
+          </p>
+          <button id="btn-confirm-url" class="blox-btn-primary" style="display:none;">确认地址，继续设置</button>
+        </div>
+
+        <div id="reg-step-2" class="blox-reg-step" style="display:none;">
+          <p class="blox-confirmed-url" id="reg-confirmed-url"></p>
+          <ol class="blox-setup-steps">
+            <li>
+              <span class="blox-step-num">1</span>
+              <span>
+                <strong>Fork 仓库</strong>
+                <span class="blox-step-detail">
+                  打开 <a href="https://github.com/UsephJo/usephjo.github.io" target="_blank">UsephJo/usephjo.github.io</a>，
+                  点击 Fork，取消勾选 "Copy the main branch only"，Create fork。
+                </span>
+              </span>
+            </li>
+            <li>
+              <span class="blox-step-num">2</span>
+              <span>
+                <strong>修改站点信息（替换 usephjo）</strong>
+                <span class="blox-step-detail">
+                  在你 fork 的仓库中，打开 <code>src/consts.ts</code>，点编辑（铅笔图标），
+                  将 <code>usephjo</code>、<code>usephjo's blog</code>、<code>https://usephjo.github.io</code>
+                  分别替换为你的用户名、博客名和博客地址。共改 5 处。
+                </span>
+              </span>
+            </li>
+            <li>
+              <span class="blox-step-num">3</span>
+              <span>
+                <strong>启用 Pages</strong>
+                <span class="blox-step-detail">
+                  Settings → Pages，Source 选 GitHub Actions。等待 Actions 中 workflow 变绿 ✓。
+                </span>
+              </span>
+            </li>
+            <li>
+              <span class="blox-step-num">4</span>
+              <span>
+                <strong>创建令牌</strong>
+                <span class="blox-step-detail">
+                  打开 <a href="https://github.com/settings/tokens/new?scopes=repo&description=blox-publish" target="_blank">GitHub 令牌页</a>，
+                  点击 Generate token，复制令牌（仅显示一次）。
+                </span>
+              </span>
+            </li>
+          </ol>
+          <a id="btn-go-blog" class="blox-btn-primary" href="#" target="_blank">前往我的博客，粘贴令牌登录</a>
+        </div>
+
+        <p id="reg-error" class="blox-error" style="display:none;"></p>
+        <button id="btn-back-from-register" class="blox-btn-back">← 返回</button>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .blox-state {
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 4rem; min-height: 60vh;
+  }
+  .blox-card {
+    max-width: 460px; width: 100%;
+    padding: 2.5rem 2rem;
+  }
+
+  /* Brand */
+  .blox-brand {
+    font-size: 2rem; font-weight: 800; margin: 0 0 0.4rem;
+    letter-spacing: -0.04em; text-align: center;
+  }
+  .blox-tagline {
+    font-size: 0.9rem; color: var(--color-text-muted);
+    text-align: center; margin: 0 0 2rem; line-height: 1.5;
+  }
+
+  /* Choices */
+  .blox-choices {
+    display: flex; flex-direction: column; gap: 0.8rem;
+  }
+  .blox-choice {
+    display: block; width: 100%; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--color-border); border-radius: 8px;
+    background: var(--color-bg); cursor: pointer;
+    font-family: inherit; text-align: left; transition: border-color 0.15s;
+  }
+  .blox-choice:hover { border-color: var(--color-accent); }
+  .blox-choice-label {
+    display: block; font-size: 0.95rem; font-weight: 600;
+    color: var(--color-text); margin-bottom: 0.2rem;
+  }
+  .blox-choice-hint {
+    font-size: 0.78rem; color: var(--color-text-muted);
+  }
+
+  /* Shared form elements */
+  .blox-title {
+    font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .blox-desc {
+    font-size: 0.88rem; color: var(--color-text-muted);
+    line-height: 1.6; margin: 0 0 1.5rem;
+  }
+  .blox-field {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border); border-radius: 8px;
+    margin-bottom: 0.75rem;
+  }
+  .blox-field-label {
+    display: block; font-size: 0.78rem; font-weight: 600;
+    color: var(--color-text-muted); margin-bottom: 0.4rem;
+  }
+  .blox-field input {
+    width: 100%; border: none; outline: none;
+    font-size: 0.95rem; font-family: var(--font-mono);
+    background: transparent; color: var(--color-text);
+    padding: 0;
+  }
+  .blox-field input::placeholder { color: var(--color-text-muted); opacity: 0.4; }
+  .blox-preview {
+    font-size: 0.82rem; color: var(--color-text-muted);
+    margin: 0.5rem 0 1rem; padding: 0.6rem 0.8rem;
+    border-left: 3px solid var(--color-border);
+  }
+  .blox-preview strong { color: var(--color-text); }
+  .blox-error {
+    font-size: 0.82rem; color: var(--color-danger); margin-top: 0.5rem;
+  }
+  .blox-btn-primary {
+    display: block; width: 100%; padding: 0.75rem 0; text-align: center;
+    background: var(--color-text); color: var(--color-bg);
+    border: none; border-radius: 8px;
+    font-size: 0.92rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; text-decoration: none; transition: opacity 0.15s;
+  }
+  .blox-btn-primary:hover { opacity: 0.85; text-decoration: none; color: var(--color-bg); }
+  .blox-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .blox-btn-back {
+    display: block; width: 100%; padding: 0.6rem 0; margin-top: 0.75rem;
+    background: transparent; border: none; color: var(--color-text-muted);
+    font-size: 0.85rem; cursor: pointer; font-family: inherit;
+    transition: color 0.15s;
+  }
+  .blox-btn-back:hover { color: var(--color-text); }
+
+  /* Register steps */
+  .blox-reg-step { margin-bottom: 1.25rem; }
+  .blox-confirmed-url {
+    font-size: 0.85rem; color: var(--color-text-muted);
+    margin-bottom: 1.25rem; padding: 0.6rem 0.8rem;
+    border-left: 3px solid var(--color-success);
+  }
+  .blox-setup-steps {
+    list-style: none; padding: 0; margin: 0 0 1.5rem;
+  }
+  .blox-setup-steps li {
+    display: flex; gap: 0.8rem; padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .blox-setup-steps li:last-child { border-bottom: none; }
+  .blox-step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--color-border); color: var(--color-text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 600; flex-shrink: 0; margin-top: 0.1rem;
+  }
+  .blox-step-detail {
+    display: block; font-size: 0.8rem; color: var(--color-text-muted);
+    margin-top: 0.25rem; line-height: 1.55; font-weight: 400;
+  }
+  .blox-step-detail a { color: var(--color-accent); }
+</style>
+
+<script>
+  const $landing = document.getElementById("blox-landing")!;
+  const $login = document.getElementById("blox-login")!;
+  const $register = document.getElementById("blox-register")!;
+
+  function show(section: HTMLElement) {
+    [$landing, $login, $register].forEach((el) => {
+      el.style.display = el === section ? "" : "none";
+    });
+  }
+
+  // ===== Landing =====
+  document.getElementById("btn-go-login")!.addEventListener("click", () => show($login));
+  document.getElementById("btn-go-register")!.addEventListener("click", () => show($register));
+
+  // ===== Login =====
+  const $loginUser = document.getElementById("login-username") as HTMLInputElement;
+  const $loginPreview = document.getElementById("login-preview")!;
+  const $loginUrlText = document.getElementById("login-url-text")!;
+  const $btnLoginGo = document.getElementById("btn-login-go") as HTMLButtonElement;
+  const $loginError = document.getElementById("login-error")!;
+
+  function deriveUrl(username: string): string {
+    return `https://${username}.github.io`;
+  }
+
+  function isValidUsername(u: string): boolean {
+    return /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/.test(u);
+  }
+
+  $loginUser.addEventListener("input", () => {
+    const u = $loginUser.value.trim();
+    if (u && isValidUsername(u)) {
+      $loginUrlText.textContent = deriveUrl(u);
+      $loginPreview.style.display = "";
+      $loginError.style.display = "none";
+    } else if (u && !isValidUsername(u)) {
+      $loginPreview.style.display = "none";
+    } else {
+      $loginPreview.style.display = "none";
+      $loginError.style.display = "none";
+    }
+  });
+
+  $btnLoginGo.addEventListener("click", () => {
+    const u = $loginUser.value.trim();
+    if (!u) { $loginError.style.display = ""; $loginError.textContent = "请输入 GitHub 用户名"; return; }
+    if (!isValidUsername(u)) { $loginError.style.display = ""; $loginError.textContent = "用户名格式不正确"; return; }
+    window.open(`${deriveUrl(u)}/auth`, "_blank");
+  });
+
+  // ===== Register =====
+  const $regUser = document.getElementById("reg-username") as HTMLInputElement;
+  const $regUrlPreview = document.getElementById("reg-url-preview")!;
+  const $regUrlText = document.getElementById("reg-url-text")!;
+  const $btnConfirmUrl = document.getElementById("btn-confirm-url") as HTMLButtonElement;
+  const $regStep1 = document.getElementById("reg-step-1")!;
+  const $regStep2 = document.getElementById("reg-step-2")!;
+  const $regConfirmedUrl = document.getElementById("reg-confirmed-url")!;
+  const $btnGoBlog = document.getElementById("btn-go-blog") as HTMLAnchorElement;
+  const $regError = document.getElementById("reg-error")!;
+
+  let confirmedUrl = "";
+
+  $regUser.addEventListener("input", () => {
+    const u = $regUser.value.trim();
+    if (u && isValidUsername(u)) {
+      $regUrlText.textContent = deriveUrl(u);
+      $regUrlPreview.style.display = "";
+      $btnConfirmUrl.style.display = "";
+      $regError.style.display = "none";
+    } else if (u && !isValidUsername(u)) {
+      $regUrlPreview.style.display = "none";
+      $btnConfirmUrl.style.display = "none";
+    } else {
+      $regUrlPreview.style.display = "none";
+      $btnConfirmUrl.style.display = "none";
+    }
+  });
+
+  $btnConfirmUrl.addEventListener("click", () => {
+    const u = $regUser.value.trim();
+    if (!u) { $regError.style.display = ""; $regError.textContent = "请输入 GitHub 用户名"; return; }
+    if (!isValidUsername(u)) { $regError.style.display = ""; $regError.textContent = "用户名格式不正确"; return; }
+    confirmedUrl = deriveUrl(u);
+    $regConfirmedUrl.innerHTML = `你的博客：<strong>${u}'s blog</strong> — ${confirmedUrl}`;
+    $btnGoBlog.href = `${confirmedUrl}/auth`;
+    $regStep1.style.display = "none";
+    $regStep2.style.display = "";
+    $regError.style.display = "none";
+  });
+
+  // ===== Back buttons =====
+  document.getElementById("btn-back-from-login")!.addEventListener("click", () => show($landing));
+  document.getElementById("btn-back-from-register")!.addEventListener("click", () => {
+    $regStep1.style.display = "";
+    $regStep2.style.display = "none";
+    show($landing);
+  });
+</script>
