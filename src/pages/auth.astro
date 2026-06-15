@@ -18,65 +18,50 @@ const postsData = posts.map((p) => ({
 <BaseLayout title="管理">
   <div id="auth-root">
     <!-- State A: Token Setup -->
-    <div id="auth-setup" class="auth-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;">
-      <div style="font-size:3rem;margin-bottom:1.5rem;">&#128274;</div>
-      <h2 style="margin-bottom:0.5rem;">登录</h2>
-      <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:2rem;line-height:1.6;max-width:360px;">
-        令牌存放在浏览器本地，不会上传到服务器。<br />如果换了浏览器或清除了数据，需要重新创建。
-      </p>
+    <div id="auth-setup" class="auth-state auth-setup">
+      <div class="auth-setup-card">
+        <h1 class="auth-setup-title">登录</h1>
+        <p class="auth-setup-desc">
+          使用 GitHub 令牌验证身份。令牌仅保存在你的浏览器中。
+        </p>
 
-      <!-- Step 1: Create token -->
-      <div class="setup-step" id="setup-step-1" style="width:100%;max-width:380px;">
-        <div class="setup-step-num">1</div>
-        <p style="font-weight:600;margin-bottom:0.5rem;">创建令牌</p>
-        <p style="font-size:0.82rem;color:var(--color-text-muted);margin-bottom:0.8rem;line-height:1.5;">
-          点击下方按钮打开 GitHub，直接点页面底部的 <strong>Generate token</strong> 即可。
-        </p>
-        <a href="https://github.com/settings/tokens/new?scopes=repo&description=usephjo-blog-publish" target="_blank" class="auth-btn auth-btn-primary" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;text-decoration:none;">&#128279; 打开 GitHub 创建令牌</a>
-        <p style="font-size:0.72rem;color:var(--color-text-muted);margin-top:0.5rem;">
-          已预填 repo 权限，直接点绿色按钮即可。令牌格式为 <code>ghp_xxxxxxxx</code>。
-        </p>
+        <div class="auth-setup-steps">
+          <a href="https://github.com/settings/tokens/new?scopes=repo&description=blog-publish" target="_blank" class="auth-setup-link">
+            <span class="auth-setup-step-label">创建令牌</span>
+            <span class="auth-setup-step-hint">打开 GitHub，点 Generate token</span>
+          </a>
+
+          <div class="auth-setup-field">
+            <span class="auth-setup-step-label">粘贴令牌</span>
+            <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" />
+            <span class="auth-setup-step-hint">创建后仅显示一次，请立即复制</span>
+          </div>
+        </div>
+
+        <button id="btn-save" class="auth-setup-btn">验证并进入</button>
+        <p id="token-error" class="auth-setup-error" style="display:none;"></p>
+        <p id="token-verifying" class="auth-setup-verifying" style="display:none;">验证中...</p>
+
+        <details class="auth-setup-details">
+          <summary>找不到之前的令牌？</summary>
+          <p>
+            GitHub 不显示已创建的令牌。丢失后重新创建即可，旧令牌自动失效。
+            <a href="https://github.com/settings/tokens" target="_blank">管理令牌 →</a>
+          </p>
+        </details>
       </div>
-
-      <!-- Step 2: Paste token -->
-      <div class="setup-step" id="setup-step-2" style="width:100%;max-width:380px;margin-top:1.8rem;">
-        <div class="setup-step-num">2</div>
-        <p style="font-weight:600;margin-bottom:0.3rem;">粘贴令牌</p>
-        <input id="token-input" type="password" placeholder="ghp_..." autocomplete="off" style="width:100%;padding:0.75rem 0.9rem;border:1px solid var(--color-border);border-radius:8px;font-size:0.92rem;background:var(--color-bg);color:var(--color-text);font-family:var(--font-mono);margin-top:0.5rem;" />
-        <p style="font-size:0.72rem;color:var(--color-text-muted);margin-top:0.3rem;">
-          GitHub 只显示一次令牌，创建后请立即复制。
-        </p>
-      </div>
-
-      <!-- Step 3: Verify & Save -->
-      <button id="btn-save" class="auth-btn auth-btn-primary" style="margin-top:1.5rem;">验证并进入</button>
-      <p id="token-error" style="color:#dc2626;font-size:0.85rem;margin-top:0.5rem;display:none;"></p>
-      <p id="token-verifying" style="color:var(--color-text-muted);font-size:0.82rem;margin-top:0.5rem;display:none;">正在验证令牌...</p>
-
-      <details style="margin-top:1.5rem;width:100%;max-width:380px;text-align:left;">
-        <summary style="font-size:0.82rem;color:var(--color-text-muted);cursor:pointer;">找不到之前的令牌？</summary>
-        <p style="font-size:0.78rem;color:var(--color-text-muted);margin-top:0.5rem;line-height:1.6;">
-          GitHub 不会再次显示已创建的令牌，这是安全设计。如果令牌丢失，只需重新创建即可，旧令牌会自动失效。<br />
-          前往 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--color-accent);">GitHub Token 设置</a> 可删除旧令牌。
-        </p>
-      </details>
     </div>
 
     <!-- State B: Dashboard -->
     <div id="auth-dashboard" class="auth-state" style="display:none;">
       <div class="page-layout">
         <main class="main-content">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
-            <h2 style="margin:0;font-size:1.2rem;">文章管理</h2>
-            <div style="display:flex;align-items:center;gap:0.8rem;">
-              <span style="font-size:0.78rem;color:var(--color-text-muted);display:flex;align-items:center;gap:0.3rem;">
-                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;"></span> <span id="repo-display">已连接</span>
-              </span>
-            </div>
+          <div class="db-header">
+            <h2>文章管理</h2>
           </div>
           <div id="post-list">
             {postsData.length === 0 ? (
-              <p style="color:var(--color-text-muted);">还没有文章，点击右侧「新增内容」开始写作。</p>
+              <p class="empty-state">还没有文章，点击右侧「新增内容」开始写作。</p>
             ) : (
               postsData.map((post) => (
                 <div class="post-item" data-filename={post.id}>
@@ -84,16 +69,16 @@ const postsData = posts.map((p) => ({
                     <a href={`/posts/${post.slug}/`} class="post-item-title">{post.title}</a>
                     <div class="post-item-meta">
                       <time>{new Date(post.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
-                      {post.draft && <span style="color:#dc2626;"> · 私密</span>}
+                      {post.draft && <span class="draft-badge"> · 私密</span>}
                       {post.categories.length > 0 && (
                         <span> · {post.categories.join(", ")}</span>
                       )}
-                      {!post.rss && <span style="color:var(--color-accent);"> · 未推送</span>}
+                      {!post.rss && <span class="rss-badge"> · 未推送</span>}
                     </div>
                   </div>
                   <div class="post-item-actions">
                     <button class="btn-edit-post auth-btn-sm" data-filename={post.id}>编辑</button>
-                    <a href={`/posts/${post.slug}/`} class="auth-btn-sm" style="color:var(--color-text-muted);text-decoration:none;">查看</a>
+                    <a href={`/posts/${post.slug}/`} class="post-item-link">查看</a>
                   </div>
                 </div>
               ))
@@ -105,13 +90,25 @@ const postsData = posts.map((p) => ({
             <h3>操作</h3>
             <ul>
               <li><a href="#" id="btn-new-post-sidebar">+ 新增内容</a></li>
-              <li><a href="/" style="color:var(--color-text-muted);">← 返回首页</a></li>
+              <li><a href="/" class="muted-link">← 返回首页</a></li>
             </ul>
+          </div>
+          <div class="sidebar-section">
+            <h3>站点设置</h3>
+            <div class="settings-fields">
+              <label>博客名</label>
+              <input id="setting-title" type="text" placeholder="usephjo's blog" />
+              <label>域名</label>
+              <input id="setting-url" type="text" placeholder="https://usephjo.github.io" />
+              <label>作者</label>
+              <input id="setting-author" type="text" placeholder="usephjo" />
+              <button id="btn-save-settings" class="auth-btn-sm" style="margin-top:0.5rem;">保存设置</button>
+            </div>
           </div>
           <div class="sidebar-section">
             <h3>账号</h3>
             <ul>
-              <li><a href="#" id="btn-logout" style="color:var(--color-text-muted);">退出登录</a></li>
+              <li><a href="#" id="btn-logout" class="muted-link">退出登录</a></li>
             </ul>
           </div>
         </aside>
@@ -120,17 +117,14 @@ const postsData = posts.map((p) => ({
   </div>
 
   <!-- State C: Editor Overlay -->
-  <div id="auth-editor-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:var(--color-bg);">
-    <div id="auth-editor" style="display:flex;flex-direction:column;height:100%;">
+  <div id="auth-editor-overlay" class="ae-overlay" style="display:none;">
+    <div id="auth-editor" class="ae-container">
       <div class="ae-top-bar">
-        <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="ae-top-bar-left">
           <button id="btn-close-editor" class="auth-btn-ghost">&larr; 返回</button>
-          <span style="font-size:0.9rem;font-weight:600;color:var(--color-text-muted);">
-            <span style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block;margin-right:0.4rem;"></span>
-            <span id="editor-mode-label">写点什么</span>
-          </span>
+          <span id="editor-mode-label" class="ae-mode-label">写点什么</span>
         </div>
-        <span id="editor-filename" style="font-size:0.75rem;color:var(--color-text-muted);"></span>
+        <span id="editor-filename" class="ae-filename"></span>
       </div>
       <div class="ae-split">
         <div class="ae-pane ae-pane-left">
@@ -138,7 +132,6 @@ const postsData = posts.map((p) => ({
           <div class="ae-toolbar">
             <button id="btn-image" title="上传图片"><span>&#128247;</span> 图片</button>
             <button id="btn-link-card" title="粘贴链接生成卡片"><span>&#128279;</span> 链接卡片</button>
-            <span style="font-size:0.72rem;color:var(--color-text-muted);margin-left:auto;line-height:2;">支持粘贴图片、Apple Music、网页链接</span>
           </div>
           <div class="ae-pane-content">
             <textarea id="content-area" placeholder="第一行是标题&#10;空一行&#10;开始写正文..."></textarea>
@@ -148,7 +141,7 @@ const postsData = posts.map((p) => ({
         <div class="ae-pane">
           <div class="ae-pane-label">预览</div>
           <div class="ae-pane-content">
-            <div id="preview" class="ae-preview" style="color:var(--color-text-muted);font-style:italic;">在左边输入内容，这里会实时渲染……</div>
+            <div id="preview" class="ae-preview ae-placeholder">在左边输入内容，这里会实时渲染……</div>
           </div>
         </div>
       </div>
@@ -161,7 +154,7 @@ const postsData = posts.map((p) => ({
           <label for="tags-input">标签</label>
           <input id="tags-input" type="text" placeholder="astro, blog" />
         </div>
-        <div style="flex:1;"></div>
+        <div class="ae-spacer"></div>
         <label class="ae-checkbox" title="勾选后仅登录用户可见">
           <input type="checkbox" id="draft-check" />
           <span>私密</span>
@@ -171,8 +164,8 @@ const postsData = posts.map((p) => ({
           <span>推送到 RSS</span>
         </label>
         <button id="btn-publish" class="auth-btn-publish">发布</button>
-        <span style="font-size:0.78rem;color:var(--color-text-muted);"><kbd style="background:var(--color-border);padding:0.12em 0.45em;border-radius:4px;font-size:0.88em;">&#8984;</kbd> <kbd style="background:var(--color-border);padding:0.12em 0.45em;border-radius:4px;font-size:0.88em;">Enter</kbd></span>
-        <span id="char-count" style="font-size:0.78rem;color:var(--color-text-muted);">0 字</span>
+        <span class="ae-kbd-wrap"><kbd>&#8984;</kbd> <kbd>Enter</kbd></span>
+        <span id="char-count" class="ae-char-count">0 字</span>
       </div>
     </div>
   </div>
@@ -182,21 +175,81 @@ const postsData = posts.map((p) => ({
 <div id="posts-data" style="display:none" data-posts={JSON.stringify(postsData)}></div>
 
 <style is:global>
+  /* ===== Login / Setup ===== */
+  .auth-setup {
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 5rem; min-height: 60vh;
+  }
+  .auth-setup-card {
+    max-width: 400px; width: 100%;
+    padding: 2.5rem 2rem;
+  }
+  .auth-setup-title {
+    font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .auth-setup-desc {
+    font-size: 0.88rem; color: var(--color-text-muted);
+    line-height: 1.6; margin: 0 0 2rem;
+  }
+  .auth-setup-steps {
+    display: flex; flex-direction: column; gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .auth-setup-link {
+    display: block; padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border); border-radius: 8px;
+    text-decoration: none; color: inherit; transition: border-color 0.15s;
+  }
+  .auth-setup-link:hover { border-color: var(--color-accent); text-decoration: none; }
+  .auth-setup-field {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border); border-radius: 8px;
+  }
+  .auth-setup-step-label {
+    display: block; font-size: 0.82rem; font-weight: 600;
+    color: var(--color-text); margin-bottom: 0.5rem;
+  }
+  .auth-setup-field input {
+    width: 100%; border: none; outline: none;
+    font-size: 0.95rem; font-family: var(--font-mono);
+    background: transparent; color: var(--color-text);
+    padding: 0; margin-bottom: 0.35rem;
+  }
+  .auth-setup-field input::placeholder { color: var(--color-text-muted); opacity: 0.4; }
+  .auth-setup-step-hint {
+    display: block; font-size: 0.75rem; color: var(--color-text-muted);
+    opacity: 0.65;
+  }
+  .auth-setup-btn {
+    width: 100%; padding: 0.75rem 0;
+    background: var(--color-text); color: var(--color-bg);
+    border: none; border-radius: 8px;
+    font-size: 0.92rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: opacity 0.15s;
+  }
+  .auth-setup-btn:hover { opacity: 0.85; }
+  .auth-setup-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .auth-setup-error {
+    margin-top: 0.75rem; font-size: 0.82rem; color: #dc2626;
+  }
+  .auth-setup-verifying {
+    margin-top: 0.75rem; font-size: 0.82rem; color: var(--color-text-muted);
+  }
+  .auth-setup-details {
+    margin-top: 1.5rem; font-size: 0.78rem; color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border); padding-top: 1rem;
+  }
+  .auth-setup-details summary {
+    cursor: pointer; opacity: 0.6; transition: opacity 0.15s;
+  }
+  .auth-setup-details summary:hover { opacity: 1; }
+  .auth-setup-details p {
+    margin-top: 0.6rem; line-height: 1.6;
+  }
+  .auth-setup-details a { color: var(--color-accent); }
+
   /* ===== Auth shared ===== */
-  .auth-btn {
-    padding: 0.7rem 1.6rem; border: none; border-radius: 8px;
-    font-size: 0.95rem; font-weight: 600; cursor: pointer;
-    transition: all 0.15s; font-family: inherit;
-  }
-  .auth-btn-primary { background: var(--color-accent); color: #fff; width: 100%; max-width: 380px; }
-  .auth-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-  .setup-step { text-align: left; }
-  .setup-step-num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 50%;
-    background: var(--color-accent); color: #fff;
-    font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem;
-  }
   .auth-btn-ghost {
     background: transparent; color: var(--color-text-muted);
     border: 1px solid var(--color-border); font-weight: 500;
@@ -219,7 +272,22 @@ const postsData = posts.map((p) => ({
   .auth-btn-publish:hover { opacity: 0.85; }
   .auth-btn-publish:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* ===== Settings panel ===== */
+  .settings-fields { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.3rem; }
+  .settings-fields label { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+  .settings-fields input {
+    padding: 0.4rem 0.55rem; border: 1px solid var(--color-border);
+    border-radius: 6px; font-size: 0.8rem; background: var(--color-bg); color: var(--color-text);
+    font-family: inherit;
+  }
+  .settings-fields input:focus { outline: none; border-color: var(--color-accent); }
+
   /* ===== Post list items ===== */
+  .db-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .db-header h2 { margin: 0; font-size: 1.2rem; }
   .post-item {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0.9rem 0; border-bottom: 1px solid var(--color-border);
@@ -235,12 +303,25 @@ const postsData = posts.map((p) => ({
     font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.2rem;
   }
   .post-item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .post-item-link {
+    padding: 0.25rem 0.6rem; border: 1px solid var(--color-border);
+    border-radius: 5px; color: var(--color-text-muted); text-decoration: none;
+    font-size: 0.76rem; transition: all 0.15s; display: inline-block;
+  }
+  .post-item-link:hover { background: var(--color-border); color: var(--color-text); }
+  .muted-link { color: var(--color-text-muted); }
+  .muted-link:hover { color: var(--color-text); text-decoration: none; }
 
   /* ===== Editor overlay ===== */
+  .ae-overlay { position: fixed; inset: 0; z-index: 1000; background: var(--color-bg); }
+  .ae-container { display: flex; flex-direction: column; height: 100%; }
   .ae-top-bar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0.8rem 1.5rem; border-bottom: 1px solid var(--color-border); flex-shrink: 0;
   }
+  .ae-top-bar-left { display: flex; align-items: center; gap: 1rem; }
+  .ae-mode-label { font-size: 0.9rem; font-weight: 600; color: var(--color-text-muted); }
+  .ae-filename { font-size: 0.75rem; color: var(--color-text-muted); }
   .ae-split { display: flex; flex: 1; min-height: 0; overflow: hidden; }
   .ae-pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .ae-pane-left { border-right: 1px solid var(--color-border); }
@@ -248,11 +329,10 @@ const postsData = posts.map((p) => ({
     font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.08em; color: var(--color-text-muted);
     padding: 0.5rem 1.2rem; flex-shrink: 0;
-    border-bottom: 1px solid var(--color-border);
   }
   .ae-toolbar {
-    display: flex; gap: 0.3rem; padding: 0.4rem 1.2rem;
-    border-bottom: 1px solid var(--color-border); flex-shrink: 0;
+    display: flex; gap: 0.3rem; padding: 0.5rem 1.2rem;
+    flex-shrink: 0;
   }
   .ae-toolbar button {
     padding: 0.3rem 0.55rem; border: 1px solid var(--color-border);
@@ -268,6 +348,14 @@ const postsData = posts.map((p) => ({
     background: var(--color-bg); color: var(--color-text);
   }
   .ae-pane-content textarea::placeholder { color: var(--color-text-muted); opacity: 0.5; }
+  .ae-placeholder { color: var(--color-text-muted); font-style: italic; }
+  .ae-spacer { flex: 1; }
+  .ae-kbd-wrap { font-size: 0.78rem; color: var(--color-text-muted); }
+  .ae-kbd-wrap kbd {
+    background: var(--color-border); padding: 0.12em 0.45em;
+    border-radius: 4px; font-size: 0.88em; font-family: var(--font-mono);
+  }
+  .ae-char-count { font-size: 0.78rem; color: var(--color-text-muted); }
 
   .ae-bottom-bar {
     display: flex; align-items: center; gap: 1rem;
@@ -312,23 +400,24 @@ const postsData = posts.map((p) => ({
   }
   .ae-preview code {
     font-family: var(--font-mono); font-size: 0.88em;
-    background: #f0efed; padding: 0.15em 0.35em; border-radius: 3px;
+    background: var(--color-code-bg); padding: 0.15em 0.35em; border-radius: 3px;
   }
   .ae-preview pre {
-    background: #1c1917; color: #fafaf9; padding: 1rem 1.2rem; border-radius: 6px;
+    background: var(--color-code-block-bg); color: var(--color-code-block-text);
+    padding: 1rem 1.2rem; border-radius: 6px;
     overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; line-height: 1.6;
   }
   .ae-preview pre code { background: none; padding: 0; }
-  .ae-preview mark { background: #fde68a; color: inherit; padding: 0.1em 0.2em; border-radius: 2px; }
+  .ae-preview mark { background: var(--color-mark-bg); color: inherit; padding: 0.1em 0.2em; border-radius: 2px; }
   .ae-preview hr { border: none; border-top: 1px solid var(--color-border); margin: 2rem 0; }
   .ae-preview a { color: var(--color-accent); text-decoration: none; }
   .ae-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
   .ae-preview th, .ae-preview td { border: 1px solid var(--color-border); padding: 0.4rem 0.7rem; text-align: left; font-size: 0.88rem; }
-  .ae-preview th { background: #f5f5f4; font-weight: 600; }
+  .ae-preview th { background: var(--color-surface); font-weight: 600; }
   .ae-preview img { max-width: 100%; border-radius: 6px; }
   .ae-preview .callout {
     border-left: 4px solid var(--color-accent); border-radius: 0 6px 6px 0;
-    padding: 1rem 1.2rem; margin: 1.5rem 0; font-style: normal; background: #f5f5f4;
+    padding: 1rem 1.2rem; margin: 1.5rem 0; font-style: normal; background: var(--color-surface);
   }
   .ae-preview .callout-title { font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.4rem; display: block; }
   .ae-preview .callout-note { background: var(--color-callout-note); border-color: #0284c7; }
@@ -366,7 +455,7 @@ const postsData = posts.map((p) => ({
   .ae-preview .link-card-body .link-card-domain { font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.7; }
 
   /* WeChat card */
-  .ae-preview .link-card-wechat .link-card-thumb { background: #07c160 !important; }
+  .ae-preview .link-card-wechat .link-card-thumb { background: var(--color-wechat) !important; }
 
   /* Apple Music */
   .ae-preview .apple-music-embed {
@@ -379,20 +468,14 @@ const postsData = posts.map((p) => ({
   .auth-toast {
     position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(1rem);
     padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9rem;
-    background: #1c1917; color: #fafaf9; z-index: 9999;
+    background: var(--color-code-block-bg); color: var(--color-code-block-text); z-index: 9999;
     opacity: 0; transition: all 0.25s ease; pointer-events: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   }
   .auth-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .auth-toast.error { background: #dc2626; }
-  .auth-toast.success { background: #16a34a; }
+  .auth-toast.error { background: var(--color-danger); }
+  .auth-toast.success { background: var(--color-success); }
   .auth-toast a { color: #fff; text-decoration: underline; }
-
-  @media (prefers-color-scheme: dark) {
-    .ae-preview code { background: #292524; }
-    .ae-preview th { background: #292524; }
-    .ae-preview .callout { background: #292524; }
-  }
 
   @media (max-width: 768px) {
     .ae-split { flex-direction: column; }
@@ -409,10 +492,16 @@ const postsData = posts.map((p) => ({
 
   const TK = "publish_token";
   const RK = "publish_repo";
+  const SK_TITLE = "site_title";
+  const SK_URL = "site_url";
+  const SK_AUTHOR = "site_author";
   const DEFAULT_REPO = "UsephJo/usephjo.github.io";
   const CONTENT_PATH = "src/content/posts";
 
   function getRepo(): string { return localStorage.getItem(RK) || DEFAULT_REPO; }
+  function getSiteTitle(): string { return localStorage.getItem(SK_TITLE) || "usephjo's blog"; }
+  function getSiteUrl(): string { return localStorage.getItem(SK_URL) || "https://usephjo.github.io"; }
+  function getAuthor(): string { return localStorage.getItem(SK_AUTHOR) || "usephjo"; }
   const DRAFT_KEY = "publish_draft";
   const DRAFT_CATS_KEY = "publish_draft_cats";
   const DRAFT_TAGS_KEY = "publish_draft_tags";
@@ -434,6 +523,36 @@ const postsData = posts.map((p) => ({
   const $btnSave = document.getElementById("btn-save")!;
   const $tokenError = document.getElementById("token-error")!;
   const $tokenVerifying = document.getElementById("token-verifying")!;
+
+  // Settings
+  const $settingTitle = document.getElementById("setting-title") as HTMLInputElement;
+  const $settingUrl = document.getElementById("setting-url") as HTMLInputElement;
+  const $settingAuthor = document.getElementById("setting-author") as HTMLInputElement;
+  const $btnSaveSettings = document.getElementById("btn-save-settings")!;
+
+  function applySiteSettings() {
+    const title = getSiteTitle();
+    document.title = title;
+    const headerTitle = document.querySelector(".site-title");
+    if (headerTitle) headerTitle.textContent = title;
+    // Update og:title
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", title);
+  }
+
+  function populateSettings() {
+    $settingTitle.value = getSiteTitle();
+    $settingUrl.value = getSiteUrl();
+    $settingAuthor.value = getAuthor();
+  }
+
+  $btnSaveSettings.addEventListener("click", () => {
+    localStorage.setItem(SK_TITLE, $settingTitle.value.trim() || getSiteTitle());
+    localStorage.setItem(SK_URL, $settingUrl.value.trim() || getSiteUrl());
+    localStorage.setItem(SK_AUTHOR, $settingAuthor.value.trim() || getAuthor());
+    applySiteSettings();
+    toast("设置已保存", "success");
+  });
 
   // Dashboard
   const $btnNewPostSidebar = document.getElementById("btn-new-post-sidebar")!;
@@ -516,12 +635,13 @@ const postsData = posts.map((p) => ({
       .then((user) => {
         console.log("[auth] logged in as:", user.login);
         localStorage.setItem(TK, t);
-        // Auto-derive repo: {username}/{username}.github.io
+        // Auto-derive settings from GitHub username
         const derivedRepo = `${user.login}/${user.login}.github.io`;
         localStorage.setItem(RK, derivedRepo);
-        // Update repo display
-        const repoDisplay = document.getElementById("repo-display");
-        if (repoDisplay) repoDisplay.textContent = derivedRepo;
+        if (!localStorage.getItem(SK_TITLE)) localStorage.setItem(SK_TITLE, `${user.login}'s blog`);
+        if (!localStorage.getItem(SK_URL)) localStorage.setItem(SK_URL, `https://${user.login}.github.io`);
+        if (!localStorage.getItem(SK_AUTHOR)) localStorage.setItem(SK_AUTHOR, user.login);
+        applySiteSettings();
         $tokenVerifying.style.display = "none";
         toast(`欢迎，${user.login}`, "success");
         const pendingEdit = getPendingEdit();
@@ -569,7 +689,7 @@ const postsData = posts.map((p) => ({
     $editorFilename.textContent = "";
     $editorModeLabel.textContent = "新增内容";
     $btnPublish.textContent = "发布";
-    $preview.innerHTML = '<span style="color:var(--color-text-muted);font-style:italic;">在左边输入内容，这里会实时渲染……</span>';
+    $preview.innerHTML = '<span class="ae-placeholder">在左边输入内容，这里会实时渲染……</span>';
     showState("editor");
     $content.focus();
   }
@@ -928,14 +1048,14 @@ const postsData = posts.map((p) => ({
   function updatePreview() {
     const raw = $content.value;
     if (!raw.trim()) {
-      $preview.innerHTML = '<span style="color:var(--color-text-muted);font-style:italic;">在左边输入内容，这里会实时渲染……</span>';
+      $preview.innerHTML = '<span class="ae-placeholder">在左边输入内容，这里会实时渲染……</span>';
       return;
     }
     try {
       $preview.innerHTML = marked.parse(preprocessObsidian(raw), { renderer, breaks: true }) as string;
     } catch (e) {
       console.error("Preview error:", e);
-      $preview.innerHTML = '<span style="color:#dc2626;">预览渲染失败</span>';
+      $preview.innerHTML = '<span class="draft-badge">预览渲染失败</span>';
     }
   }
 
@@ -1123,7 +1243,7 @@ const postsData = posts.map((p) => ({
     const viewLink = item.querySelector(".post-item-actions a") as HTMLElement | null;
     if (titleEl) titleEl.textContent = title;
     if (metaEl) {
-      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>${draft ? '<span style="color:#dc2626;"> · 私密</span>' : ""}${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span style="color:var(--color-accent);"> · 未推送</span>' : ""}`;
+      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>${draft ? '<span class="draft-badge"> · 私密</span>' : ""}${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span class="rss-badge"> · 未推送</span>' : ""}`;
     }
     if (viewLink) viewLink.href = `/posts/${slug}/`;
   }
@@ -1137,14 +1257,14 @@ const postsData = posts.map((p) => ({
         <a href="/posts/${slug}-${ts}/" class="post-item-title">${title}</a>
         <div class="post-item-meta">
           <time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
-          ${draft ? '<span style="color:#dc2626;"> · 私密</span>' : ""}
+          ${draft ? '<span class="draft-badge"> · 私密</span>' : ""}
           ${cats.length ? " · " + cats.join(", ") : ""}
-          ${!rss ? '<span style="color:var(--color-accent);"> · 未推送</span>' : ""}
+          ${!rss ? '<span class="rss-badge"> · 未推送</span>' : ""}
         </div>
       </div>
       <div class="post-item-actions">
         <button class="btn-edit-post auth-btn-sm" data-filename="${filename}">编辑</button>
-        <a href="/posts/${slug}-${ts}/" class="auth-btn-sm" style="color:var(--color-text-muted);text-decoration:none;">查看</a>
+        <a href="/posts/${slug}-${ts}/" class="post-item-link">查看</a>
       </div>`;
     $postList.insertBefore(div, $postList.firstChild);
     // Remove empty state if exists
@@ -1163,8 +1283,8 @@ const postsData = posts.map((p) => ({
 
   // ===== Init =====
   if (hasToken()) {
-    const repoDisplay = document.getElementById("repo-display");
-    if (repoDisplay) repoDisplay.textContent = getRepo();
+    populateSettings();
+    applySiteSettings();
     const pendingEdit = getPendingEdit();
     if (pendingEdit) {
       showState("dashboard");

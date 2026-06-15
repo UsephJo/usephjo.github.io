@@ -9,17 +9,17 @@ const recentPosts = posts
 ---
 
 <BaseLayout title="404">
-  <main style="text-align: center; padding: 4rem 0;">
-    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">404</h1>
-    <p style="color: var(--color-text-muted);">页面不存在</p>
+  <main class="error-page">
+    <h1 class="error-code">404</h1>
+    <p class="empty-state">页面不存在</p>
     <p><a href="/">← 返回首页</a></p>
     {recentPosts.length > 0 && (
-      <div style="margin-top: 2.5rem;">
-        <p style="font-size:0.85rem;color:var(--color-text-muted);margin-bottom:0.8rem;">最近文章</p>
-        <ul style="list-style:none;padding:0;margin:0;">
+      <div>
+        <p class="error-heading">最近文章</p>
+        <ul class="recent-posts-list">
           {recentPosts.map((p) => (
-            <li style="margin-bottom:0.5rem;">
-              <a href={`/posts/${p.id.replace(/\.md$/, "")}/`} style="font-size:0.92rem;">
+            <li>
+              <a href={`/posts/${p.id.replace(/\.md$/, "")}/`}>
                 {p.data.title}
               </a>
             </li>

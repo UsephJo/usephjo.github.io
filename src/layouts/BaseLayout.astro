@@ -42,5 +42,19 @@ const pageDescription = description ?? SITE_DESCRIPTION;
     <Header />
     <slot />
     <SearchOverlay />
+    <script>
+      // Apply site settings from localStorage if available
+      const st = localStorage.getItem("site_title");
+      const sa = localStorage.getItem("site_author");
+      if (st) {
+        document.title = document.title.replace(/usephjo's blog/, st);
+        const ht = document.querySelector(".site-title");
+        if (ht) ht.textContent = st;
+      }
+      if (sa) {
+        const ogt = document.querySelector('meta[property="og:title"]');
+        if (ogt && st) ogt.setAttribute("content", ogt.getAttribute("content")!.replace(/usephjo's blog/, st));
+      }
+    </script>
   </body>
 </html>
