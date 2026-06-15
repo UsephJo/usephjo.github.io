@@ -1,6 +1,7 @@
 ---
 import { SITE_TITLE, SITE_DESCRIPTION, SITE_URL, AUTHOR } from "../consts";
 import Header from "../components/Header.astro";
+import SearchOverlay from "../components/SearchOverlay.astro";
 import "../styles/global.css";
 
 interface Props {
@@ -40,5 +41,6 @@ const pageDescription = description ?? SITE_DESCRIPTION;
   <body>
     <Header />
     <slot />
+    <SearchOverlay />
   </body>
 </html>

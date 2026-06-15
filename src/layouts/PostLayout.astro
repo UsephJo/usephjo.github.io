@@ -6,7 +6,7 @@ import Sidebar from "../components/Sidebar.astro";
 import { CATEGORIES } from "../consts";
 
 interface Props {
-  post: CollectionEntry<"posts"> | CollectionEntry<"notes"> | CollectionEntry<"moments">;
+  post: CollectionEntry<"posts"> | CollectionEntry<"notes">;
 }
 
 const { post } = Astro.props;
@@ -17,8 +17,7 @@ const { headings } = post.rendered ?? { headings: [] };
 const postCategories = CATEGORIES.filter((c) =>
   (categories ?? []).includes(c.slug)
 );
-const typeLabel =
-  post.collection === "notes" ? "笔记" : post.collection === "moments" ? "片段" : "文章";
+const typeLabel = post.collection === "notes" ? "笔记" : "文章";
 ---
 
 <BaseLayout
@@ -72,12 +71,68 @@ const typeLabel =
               ))}
             </p>
           )}
-          <p>
+          <p class="article-footer-links">
             <a href="/">← 返回首页</a>
+            {post.collection === "posts" && (
+              <a
+                id="edit-post-link"
+                href={`/auth?edit=${post.id}`}
+                style="display:none;color:var(--color-accent);"
+              >编辑此文章</a>
+            )}
           </p>
         </footer>
       </article>
+
+      <div id="comments" style="margin-top:3rem;padding-top:2rem;border-top:1px solid var(--color-border);">
+        <h2 style="font-size:1.1rem;margin-bottom:1.2rem;">评论</h2>
+        <p id="comments-notice" style="font-size:0.82rem;color:var(--color-text-muted);">
+          评论功能需要安装 <a href="https://github.com/apps/giscus" target="_blank" rel="noopener">Giscus GitHub App</a>。<br />
+          安装后评论将自动显示在此处。
+        </p>
+        <div id="giscus"></div>
+      </div>
     </main>
     <Sidebar />
   </div>
 </BaseLayout>
+
+<script is:inline>
+  function loadGiscus() {
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.setAttribute("data-repo", "UsephJo/usephjo.github.io");
+    script.setAttribute("data-repo-id", "R_kgDOS41GNw");
+    script.setAttribute("data-category", "General");
+    script.setAttribute("data-category-id", "DIC_kwDOS41GN84C_EdY");
+    script.setAttribute("data-mapping", "pathname");
+    script.setAttribute("data-strict", "0");
+    script.setAttribute("data-reactions-enabled", "1");
+    script.setAttribute("data-emit-metadata", "0");
+    script.setAttribute("data-lang", "zh-CN");
+    script.setAttribute("data-theme", "preferred_color_scheme");
+    script.setAttribute("crossorigin", "anonymous");
+    script.async = true;
+    script.onload = () => {
+      const notice = document.getElementById("comments-notice");
+      if (notice) notice.style.display = "none";
+    };
+    script.onerror = () => {
+      const notice = document.getElementById("comments-notice");
+      if (notice) notice.style.display = "";
+    };
+    document.getElementById("giscus")?.appendChild(script);
+  }
+
+  // Load Giscus on idle
+  if (window.requestIdleCallback) {
+    requestIdleCallback(loadGiscus);
+  } else {
+    setTimeout(loadGiscus, 500);
+  }
+
+  if (localStorage.getItem("publish_token")) {
+    const link = document.getElementById("edit-post-link");
+    if (link) link.style.display = "";
+  }
+</script>

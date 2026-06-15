@@ -1,0 +1,220 @@
+<div id="search-overlay" class="search-overlay" style="display:none;">
+  <div class="search-backdrop"></div>
+  <div class="search-modal">
+    <div class="search-input-wrap">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search-input" type="text" placeholder="搜索文章..." autocomplete="off" />
+      <kbd class="search-hint">esc</kbd>
+    </div>
+    <div id="search-results" class="search-results">
+      <p class="search-empty">输入关键词开始搜索</p>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .search-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 18vh;
+  }
+  .search-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .search-modal {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 560px;
+    background: var(--color-bg); border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+    overflow: hidden;
+    margin: 0 1rem;
+  }
+  .search-input-wrap {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .search-icon { color: var(--color-text-muted); flex-shrink: 0; opacity: 0.5; }
+  .search-input-wrap input {
+    flex: 1; border: none; outline: none;
+    font-size: 1rem; font-family: inherit;
+    background: transparent; color: var(--color-text);
+  }
+  .search-input-wrap input::placeholder { color: var(--color-text-muted); opacity: 0.55; }
+  .search-hint {
+    font-size: 0.72rem; color: var(--color-text-muted);
+    background: var(--color-border); padding: 0.15em 0.45em;
+    border-radius: 4px; font-family: var(--font-mono);
+    opacity: 0.6;
+  }
+  .search-results {
+    max-height: 55vh; overflow-y: auto; padding: 0.5rem 0;
+  }
+  .search-empty {
+    text-align: center; color: var(--color-text-muted);
+    font-size: 0.88rem; padding: 2.5rem 1rem;
+  }
+  .search-result-item {
+    display: block; padding: 0.85rem 1.2rem; text-decoration: none;
+    border-bottom: 1px solid var(--color-border);
+    transition: background 0.1s;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover, .search-result-item.active { background: var(--color-border); }
+  .search-result-title {
+    font-size: 0.95rem; font-weight: 600; color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+  .search-result-title mark {
+    background: #fde68a; color: inherit; border-radius: 2px; padding: 0.05em 0.15em;
+  }
+  .search-result-excerpt {
+    font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5;
+  }
+  .search-result-excerpt mark {
+    background: #fde68a; color: inherit; border-radius: 2px; padding: 0.05em 0.15em;
+  }
+  @media (prefers-color-scheme: dark) {
+    .search-backdrop { background: rgba(0,0,0,0.6); }
+    .search-result-title mark, .search-result-excerpt mark { background: #854d0e; color: #fef9c3; }
+    .search-modal { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
+  }
+  @media (max-width: 600px) {
+    .search-modal { max-width: none; margin: 0; border-radius: 12px 12px 0 0; }
+    .search-overlay { padding-top: 8vh; align-items: flex-end; }
+  }
+</style>
+
+<script is:inline>
+  function initSearch() {
+    const overlay = document.getElementById("search-overlay")!;
+    const input = document.getElementById("search-input") as HTMLInputElement;
+    const results = document.getElementById("search-results")!;
+    const backdrop = overlay.querySelector(".search-backdrop")!;
+
+    let pagefind: any = null;
+    let activeIdx = -1;
+    let currentResults: any[] = [];
+
+    function showResults(html: string) {
+      results.innerHTML = html;
+      activeIdx = -1;
+      currentResults = Array.from(results.querySelectorAll(".search-result-item"));
+    }
+
+    function open() {
+      overlay.style.display = "";
+      input.value = "";
+      results.innerHTML = '<p class="search-empty">输入关键词开始搜索</p>';
+      activeIdx = -1;
+      requestAnimationFrame(() => input.focus());
+    }
+
+    function close() {
+      overlay.style.display = "none";
+    }
+
+    async function doSearch(query: string) {
+      if (!query.trim()) {
+        results.innerHTML = '<p class="search-empty">输入关键词开始搜索</p>';
+        return;
+      }
+      if (!pagefind) {
+        try {
+          const mod = await (window as any).__PAGEFIND__;
+          if (mod) pagefind = mod;
+          else {
+            results.innerHTML = '<p class="search-empty">搜索索引加载中...</p>';
+            return;
+          }
+        } catch {
+          results.innerHTML = '<p class="search-empty">搜索不可用（索引未加载）</p>';
+          return;
+        }
+      }
+      results.innerHTML = '<p class="search-empty">搜索中...</p>';
+      try {
+        const search = await pagefind.search(query);
+        if (!search || !search.results.length) {
+          results.innerHTML = '<p class="search-empty">没有找到相关文章</p>';
+          return;
+        }
+        const items = await Promise.all(search.results.slice(0, 10).map(async (r: any) => {
+          const data = await r.data();
+          return { url: data.url, title: data.meta?.title || data.url, excerpt: data.excerpt };
+        }));
+        showResults(
+          items.map((item: any, i: number) =>
+            `<a href="${item.url}" class="search-result-item" data-idx="${i}">
+              <div class="search-result-title">${item.title}</div>
+              <div class="search-result-excerpt">${item.excerpt}</div>
+            </a>`
+          ).join("")
+        );
+      } catch {
+        results.innerHTML = '<p class="search-empty">搜索出错，请重试</p>';
+      }
+    }
+
+    let debounce: ReturnType<typeof setTimeout>;
+    input.addEventListener("input", () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => doSearch(input.value), 200);
+    });
+
+    // Keyboard navigation
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        activeIdx = Math.min(activeIdx + 1, currentResults.length - 1);
+        updateActive();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        activeIdx = Math.max(activeIdx - 1, -1);
+        updateActive();
+      } else if (e.key === "Enter") {
+        if (activeIdx >= 0 && currentResults[activeIdx]) {
+          (currentResults[activeIdx] as HTMLAnchorElement).click();
+        }
+      } else if (e.key === "Escape") {
+        close();
+      }
+    });
+
+    function updateActive() {
+      currentResults.forEach((el, i) => el.classList.toggle("active", i === activeIdx));
+    }
+
+    backdrop.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "F") {
+        e.preventDefault();
+        open();
+      }
+      if (e.key === "Escape" && overlay.style.display !== "none") {
+        close();
+      }
+    });
+
+    // Lazy load pagefind on first Cmd+Shift+F
+    let loaded = false;
+    const origOpen = open;
+    open = () => {
+      origOpen();
+      if (!loaded) {
+        loaded = true;
+        const script = document.createElement("script");
+        script.src = "/pagefind/pagefind.js";
+        script.onload = () => {
+          (window as any).__PAGEFIND__ = (window as any).Pagefind;
+        };
+        document.head.appendChild(script);
+      }
+    };
+  }
+
+  initSearch();
+</script>

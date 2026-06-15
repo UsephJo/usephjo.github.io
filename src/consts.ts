@@ -16,6 +16,8 @@ export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/about", label: "关于" },
 ];
 
+export const TAG_CLOUD_LIMIT = 15;
+
 export const SOCIAL_LINKS: { href: string; label: string }[] = [
   { href: "/rss.xml", label: "RSS" },
 ];

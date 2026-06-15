@@ -27,18 +27,7 @@ const noteCollection = defineCollection({
   }),
 });
 
-const momentCollection = defineCollection({
-  type: "content",
-  schema: z.object({
-    title: z.string(),
-    date: z.date(),
-    tags: z.array(z.string()).default([]),
-    draft: z.boolean().default(false),
-  }),
-});
-
 export const collections = {
   posts: postCollection,
   notes: noteCollection,
-  moments: momentCollection,
 };

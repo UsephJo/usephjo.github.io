@@ -10,6 +10,7 @@ const postsData = posts.map((p) => ({
   categories: p.data.categories ?? [],
   tags: p.data.tags ?? [],
   rss: p.data.rss,
+  draft: p.data.draft ?? false,
   slug: p.id.replace(/\.md$/, ""),
 }));
 ---
@@ -69,7 +70,7 @@ const postsData = posts.map((p) => ({
             <h2 style="margin:0;font-size:1.2rem;">文章管理</h2>
             <div style="display:flex;align-items:center;gap:0.8rem;">
               <span style="font-size:0.78rem;color:var(--color-text-muted);display:flex;align-items:center;gap:0.3rem;">
-                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;"></span> 已连接
+                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;"></span> <span id="repo-display">已连接</span>
               </span>
             </div>
           </div>
@@ -83,6 +84,7 @@ const postsData = posts.map((p) => ({
                     <a href={`/posts/${post.slug}/`} class="post-item-title">{post.title}</a>
                     <div class="post-item-meta">
                       <time>{new Date(post.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
+                      {post.draft && <span style="color:#dc2626;"> · 私密</span>}
                       {post.categories.length > 0 && (
                         <span> · {post.categories.join(", ")}</span>
                       )}
@@ -160,6 +162,10 @@ const postsData = posts.map((p) => ({
           <input id="tags-input" type="text" placeholder="astro, blog" />
         </div>
         <div style="flex:1;"></div>
+        <label class="ae-checkbox" title="勾选后仅登录用户可见">
+          <input type="checkbox" id="draft-check" />
+          <span>私密</span>
+        </label>
         <label class="ae-checkbox" title="取消勾选后不出现在 RSS 中">
           <input type="checkbox" id="rss-check" checked />
           <span>推送到 RSS</span>
@@ -319,17 +325,18 @@ const postsData = posts.map((p) => ({
   .ae-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
   .ae-preview th, .ae-preview td { border: 1px solid var(--color-border); padding: 0.4rem 0.7rem; text-align: left; font-size: 0.88rem; }
   .ae-preview th { background: #f5f5f4; font-weight: 600; }
-  .ae-preview img { max-width: 100%; border-radius: 4px; }
+  .ae-preview img { max-width: 100%; border-radius: 6px; }
   .ae-preview .callout {
     border-left: 4px solid var(--color-accent); border-radius: 0 6px 6px 0;
-    padding: 0.8rem 1rem; margin: 1rem 0; font-style: normal;
+    padding: 1rem 1.2rem; margin: 1.5rem 0; font-style: normal; background: #f5f5f4;
   }
-  .ae-preview .callout-title { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.3rem; display: block; }
+  .ae-preview .callout-title { font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.4rem; display: block; }
   .ae-preview .callout-note { background: var(--color-callout-note); border-color: #0284c7; }
   .ae-preview .callout-warning { background: var(--color-callout-warning); border-color: #d97706; }
   .ae-preview .callout-tip { background: var(--color-callout-tip); border-color: #16a34a; }
   .ae-preview .callout-info { background: var(--color-callout-info); border-color: #2563eb; }
-  .ae-preview .callout-danger { background: #fee2e2; border-color: #dc2626; }
+  .ae-preview .callout-danger { background: var(--color-callout-danger); border-color: #dc2626; }
+  .ae-preview .callout-quote { background: var(--color-callout-quote); border-color: #78716c; }
 
   /* Link card in preview */
   .ae-preview .link-card {
@@ -358,6 +365,9 @@ const postsData = posts.map((p) => ({
   }
   .ae-preview .link-card-body .link-card-domain { font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.7; }
 
+  /* WeChat card */
+  .ae-preview .link-card-wechat .link-card-thumb { background: #07c160 !important; }
+
   /* Apple Music */
   .ae-preview .apple-music-embed {
     border-radius: 12px; overflow: hidden; margin: 1rem 0;
@@ -381,7 +391,7 @@ const postsData = posts.map((p) => ({
   @media (prefers-color-scheme: dark) {
     .ae-preview code { background: #292524; }
     .ae-preview th { background: #292524; }
-    .ae-preview .callout-danger { background: #450a0a; }
+    .ae-preview .callout { background: #292524; }
   }
 
   @media (max-width: 768px) {
@@ -398,12 +408,16 @@ const postsData = posts.map((p) => ({
   import { marked } from "marked";
 
   const TK = "publish_token";
-  const REPO = "UsephJo/usephjo.github.io";
+  const RK = "publish_repo";
+  const DEFAULT_REPO = "UsephJo/usephjo.github.io";
   const CONTENT_PATH = "src/content/posts";
+
+  function getRepo(): string { return localStorage.getItem(RK) || DEFAULT_REPO; }
   const DRAFT_KEY = "publish_draft";
   const DRAFT_CATS_KEY = "publish_draft_cats";
   const DRAFT_TAGS_KEY = "publish_draft_tags";
   const DRAFT_RSS_KEY = "publish_draft_rss";
+  const DRAFT_DP_KEY = "publish_draft_dp";
 
   // Build-time posts data
   const postsDataEl = document.getElementById("posts-data");
@@ -432,6 +446,7 @@ const postsData = posts.map((p) => ({
   const $categories = document.getElementById("categories-input") as HTMLInputElement;
   const $tags = document.getElementById("tags-input") as HTMLInputElement;
   const $rssCheck = document.getElementById("rss-check") as HTMLInputElement;
+  const $draftCheck = document.getElementById("draft-check") as HTMLInputElement;
   const $btnPublish = document.getElementById("btn-publish") as HTMLButtonElement;
   const $charCount = document.getElementById("char-count")!;
   const $editorFilename = document.getElementById("editor-filename")!;
@@ -443,7 +458,7 @@ const postsData = posts.map((p) => ({
 
   let toastTimer: ReturnType<typeof setTimeout>;
   let publishing = false;
-  let editingFile: { filename: string; sha: string } | null = null;
+  let editingFile: { filename: string; sha: string; originalDate?: string } | null = null;
 
   // ===== State =====
   function showState(state: "setup" | "dashboard" | "editor") {
@@ -501,9 +516,22 @@ const postsData = posts.map((p) => ({
       .then((user) => {
         console.log("[auth] logged in as:", user.login);
         localStorage.setItem(TK, t);
+        // Auto-derive repo: {username}/{username}.github.io
+        const derivedRepo = `${user.login}/${user.login}.github.io`;
+        localStorage.setItem(RK, derivedRepo);
+        // Update repo display
+        const repoDisplay = document.getElementById("repo-display");
+        if (repoDisplay) repoDisplay.textContent = derivedRepo;
         $tokenVerifying.style.display = "none";
         toast(`欢迎，${user.login}`, "success");
-        showState("dashboard");
+        const pendingEdit = getPendingEdit();
+        if (pendingEdit) {
+          showState("dashboard");
+          openEditPost(pendingEdit);
+          clearPendingEdit();
+        } else {
+          showState("dashboard");
+        }
       })
       .catch((e) => {
         console.error("[auth] verify error:", e);
@@ -523,6 +551,7 @@ const postsData = posts.map((p) => ({
   $btnLogout.addEventListener("click", () => {
     if (confirm("确定清除令牌？\n（草稿会被保留）")) {
       localStorage.removeItem(TK);
+      localStorage.removeItem(RK);
       showState("setup");
       toast("令牌已清除");
     }
@@ -535,6 +564,7 @@ const postsData = posts.map((p) => ({
     $categories.value = "";
     $tags.value = "";
     $rssCheck.checked = true;
+    $draftCheck.checked = false;
     $charCount.textContent = "0 字";
     $editorFilename.textContent = "";
     $editorModeLabel.textContent = "新增内容";
@@ -546,6 +576,25 @@ const postsData = posts.map((p) => ({
 
   $btnNewPostSidebar.addEventListener("click", (e) => { e.preventDefault(); openNewPost(); });
 
+  // ===== Check pending edit from URL param =====
+  function getPendingEdit(): string | null {
+    return new URLSearchParams(location.search).get("edit");
+  }
+
+  function clearPendingEdit() {
+    const url = new URL(location.href);
+    url.searchParams.delete("edit");
+    history.replaceState(null, "", url);
+  }
+
+  // ===== UTF-8 base64 helpers =====
+  function b64ToUtf8(b64: string): string {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
   // ===== Open editor for editing existing post =====
   async function openEditPost(filename: string) {
     const token = localStorage.getItem(TK);
@@ -554,12 +603,12 @@ const postsData = posts.map((p) => ({
     toast("正在加载文章...");
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${REPO}/contents/${CONTENT_PATH}/${filename}`,
+        `https://api.github.com/repos/${getRepo()}/contents/${CONTENT_PATH}/${filename}`,
         { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const raw = atob(data.content);
+      const raw = b64ToUtf8(data.content);
       const sha = data.sha;
 
       // Parse frontmatter
@@ -569,9 +618,11 @@ const postsData = posts.map((p) => ({
         const fm = fmMatch[1];
         body = fmMatch[2].trim();
         const titleMatch = fm.match(/title:\s*"([^"]*)"/);
+        const dateMatch = fm.match(/date:\s*(\S+)/);
         const catsMatch = fm.match(/categories:\s*\[([^\]]*)\]/);
         const tagsMatch = fm.match(/tags:\s*\[([^\]]*)\]/);
         const rssMatch = fm.match(/rss:\s*(true|false)/);
+        const draftMatch = fm.match(/draft:\s*(true|false)/);
 
         if (titleMatch) {
           // Prepend title as first line for the editor
@@ -590,6 +641,11 @@ const postsData = posts.map((p) => ({
         if (rssMatch) {
           $rssCheck.checked = rssMatch[1] === "true";
         }
+        if (draftMatch) {
+          $draftCheck.checked = draftMatch[1] === "true";
+        } else {
+          $draftCheck.checked = false;
+        }
       } else {
         $categories.value = "";
         $tags.value = "";
@@ -597,7 +653,7 @@ const postsData = posts.map((p) => ({
 
       $content.value = body;
       $charCount.textContent = `${body.length} 字`;
-      editingFile = { filename, sha };
+      editingFile = { filename, sha, originalDate: dateMatch?.[1] };
       $editorFilename.textContent = filename;
       $editorModeLabel.textContent = "编辑文章";
       $btnPublish.textContent = "更新";
@@ -637,23 +693,64 @@ const postsData = posts.map((p) => ({
     $content.dispatchEvent(new Event("input"));
   }
 
-  // ===== Image upload =====
+  // ===== Image upload to GitHub =====
+  async function uploadImageToGithub(file: File): Promise<string> {
+    const token = localStorage.getItem(TK);
+    if (!token) throw new Error("令牌丢失");
+
+    const ext = file.type === "image/png" ? "png" : file.type === "image/gif" ? "gif" : "jpg";
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9一-鿿_-]/g, "").slice(0, 40) || "image";
+    const filename = `${ts}-${baseName}.${ext}`;
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const full = reader.result as string;
+        const b64 = full.slice(full.indexOf(",") + 1);
+        fetch(`https://api.github.com/repos/${getRepo()}/contents/public/images/${filename}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github+json",
+          },
+          body: JSON.stringify({ message: `上传图片 ${filename}`, content: b64 }),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(() => resolve(`/images/${filename}`))
+          .catch(reject);
+      };
+      reader.onerror = () => reject(new Error("读取图片失败"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function handleImageUpload(file: File, alt?: string) {
+    uploadImageToGithub(file)
+      .then((path) => {
+        insertAtCursor(`\n![${alt || file.name.replace(/\.[^.]+$/, "")}](${path})\n`);
+        toast("图片已上传到 GitHub");
+      })
+      .catch((e) => {
+        // Fallback to base64 on failure
+        const reader = new FileReader();
+        reader.onload = () => { insertAtCursor(`\n![image](${reader.result as string})\n`); toast("上传失败，已转为内嵌图片", "error"); };
+        reader.readAsDataURL(file);
+      });
+  }
+
   $btnImage.addEventListener("click", () => $fileInput.click());
   $fileInput.addEventListener("change", () => {
     const files = $fileInput.files;
     if (!files || files.length === 0) return;
-    toast(`正在处理 ${files.length} 张图片...`);
-    let done = 0;
-    for (const file of Array.from(files)) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        insertAtCursor(`\n![${file.name.replace(/\.[^.]+$/, "")}](${reader.result as string})\n`);
-        done++;
-        if (done === files.length) toast(`${done} 张图片已插入`, "success");
-      };
-      reader.onerror = () => toast(`读取 ${file.name} 失败`, "error");
-      reader.readAsDataURL(file);
-    }
+    toast(`正在上传 ${files.length} 张图片到 GitHub...`);
+    for (const file of Array.from(files)) handleImageUpload(file);
     $fileInput.value = "";
   });
 
@@ -666,9 +763,7 @@ const postsData = posts.map((p) => ({
         e.preventDefault();
         const file = item.getAsFile();
         if (!file) continue;
-        const reader = new FileReader();
-        reader.onload = () => { insertAtCursor(`\n![image](${reader.result as string})\n`); toast("图片已插入"); };
-        reader.readAsDataURL(file);
+        handleImageUpload(file, "image");
         return;
       }
     }
@@ -711,6 +806,11 @@ const postsData = posts.map((p) => ({
   }
 
   async function insertLinkCard(url: string) {
+    if (isWechatUrl(url)) {
+      insertAtCursor(`\n${buildWechatCardHTML(url)}\n\n`);
+      toast("微信文章卡片已插入", "success");
+      return;
+    }
     toast("正在获取页面信息...");
     const meta = await tryFetchMetadata(url);
     insertAtCursor(`\n${buildLinkCardHTML(url, meta || undefined)}\n\n`);
@@ -722,6 +822,15 @@ const postsData = posts.map((p) => ({
     if (url && URL_RE.test(url.trim())) insertLinkCard(url.trim());
     else if (url) toast("请输入有效的 URL", "error");
   });
+
+  // WeChat article detection
+  function isWechatUrl(url: string): boolean {
+    return /mp\.weixin\.qq\.com/.test(url);
+  }
+
+  function buildWechatCardHTML(url: string): string {
+    return `<a href="${url}" target="_blank" rel="noopener" class="link-card link-card-wechat"><span class="link-card-thumb" style="background:#07c160;display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-size:1.2rem;font-weight:700;">微</span></span><span class="link-card-body"><strong>微信公众号文章</strong><span class="link-card-desc">点击阅读原文</span><span class="link-card-domain">mp.weixin.qq.com</span></span></a>`;
+  }
 
   // Apple Music detection
   function detectAppleMusicEmbed(text: string): { html: string } | null {
@@ -736,12 +845,34 @@ const postsData = posts.map((p) => ({
     return null;
   }
 
+  // Bilibili detection
+  function detectBilibiliEmbed(text: string): { html: string } | null {
+    const match = text.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
+    if (!match) return null;
+    return { html: `<div class="video-embed"><iframe src="https://player.bilibili.com/player.html?bvid=${match[1]}" allowfullscreen style="width:100%;aspect-ratio:16/9;border:none;border-radius:8px;"></iframe></div>` };
+  }
+
+  // YouTube detection
+  function detectYoutubeEmbed(text: string): { html: string } | null {
+    let vid = "";
+    const shortMatch = text.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+    if (shortMatch) { vid = shortMatch[1]; }
+    const longMatch = text.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+    if (longMatch) { vid = longMatch[1]; }
+    if (!vid) return null;
+    return { html: `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${vid}" allowfullscreen style="width:100%;aspect-ratio:16/9;border:none;border-radius:8px;"></iframe></div>` };
+  }
+
   $content.addEventListener("paste", (e: ClipboardEvent) => {
     const text = e.clipboardData?.getData("text/plain");
     if (!text?.trim()) return;
     const trimmed = text.trim();
     const am = detectAppleMusicEmbed(trimmed);
     if (am) { e.preventDefault(); insertAtCursor(`\n${am.html}\n\n`); toast("Apple Music 嵌入已插入"); return; }
+    const bl = detectBilibiliEmbed(trimmed);
+    if (bl) { e.preventDefault(); insertAtCursor(`\n${bl.html}\n\n`); toast("Bilibili 播放器已插入"); return; }
+    const yt = detectYoutubeEmbed(trimmed);
+    if (yt) { e.preventDefault(); insertAtCursor(`\n${yt.html}\n\n`); toast("YouTube 播放器已插入"); return; }
     if (URL_RE.test(trimmed) && trimmed.split(/\s+/).length === 1) {
       e.preventDefault(); insertLinkCard(trimmed);
     }
@@ -756,17 +887,42 @@ const postsData = posts.map((p) => ({
 
   function preprocessObsidian(md: string): string {
     let text = md;
+
+    // Highlights
     text = text.replace(/==([^=\n]+)==/g, "<mark>$1</mark>");
-    text = text.replace(/!\[\[([^\]]+)\]\]/g, (_m: string, file: string) => `<img src="/images/${file}" alt="${file}" />`);
-    text = text.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m: string, page: string, _h: string, alias: string) => {
-      return `[${alias || page}](/posts/${slugify(page)}/)`;
-    });
-    text = text.replace(/^>\s*\[!(\w+)\]\s*(.*?)\n(.*?)(?=\n(?!>)|$)/gms, (_m: string, type: string, title: string, body: string) => {
-      const t = type.toLowerCase();
-      const bodyClean = body.replace(/^>\s?/gm, "");
-      return `<aside class="callout callout-${t}"><span class="callout-title">${title || t.toUpperCase()}</span>\n\n${bodyClean}\n\n</aside>`;
-    });
-    return text;
+
+    // Image embeds
+    text = text.replace(/!\[\[([^\]]+)\]\]/g, (_m: string, file: string) =>
+      `<img src="/images/${file}" alt="${file}" loading="lazy" />`
+    );
+
+    // Wikilinks
+    text = text.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m: string, page: string, _h: string, alias: string) =>
+      `[${alias || page}](/posts/${slugify(page)}/)`
+    );
+
+    // Callouts: collect consecutive > lines starting with [!type]
+    const lines = text.split("\n");
+    const out: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const calloutMatch = lines[i].match(/^>\s*\[!(\w+)\]\s*(.*)/i);
+      if (calloutMatch) {
+        const type = calloutMatch[1].toLowerCase();
+        let title = calloutMatch[2] || type.toUpperCase();
+        const bodyLines: string[] = [];
+        i++;
+        while (i < lines.length && lines[i].match(/^>/)) {
+          bodyLines.push(lines[i].replace(/^>\s?/, ""));
+          i++;
+        }
+        i--; // back up one because the for loop will increment
+        out.push(`<aside class="callout callout-${type}"><span class="callout-title">${title}</span>\n\n${bodyLines.join("\n")}\n\n</aside>`);
+      } else {
+        out.push(lines[i]);
+      }
+    }
+
+    return out.join("\n");
   }
 
   function updatePreview() {
@@ -840,7 +996,8 @@ const postsData = posts.map((p) => ({
     const rss = $rssCheck.checked;
 
     const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
     const slug = slugify(title);
     const ts = now.getTime().toString(36);
     const filename = editingFile ? editingFile.filename : `${slug}-${ts}.md`;
@@ -850,21 +1007,27 @@ const postsData = posts.map((p) => ({
     const tagsYaml = tags.length ? `tags: [${tags.join(", ")}]` : "tags: []";
     const desc = esc(body.replace(/\n/g, " ").slice(0, 120));
 
-    const fm = [
+    const isUpdate = !!editingFile;
+    const dateLine = isUpdate && editingFile?.originalDate
+      ? `date: ${editingFile.originalDate}`
+      : `date: ${today}`;
+    const updatedLine = isUpdate ? `updated: ${today}` : "";
+    const draftLine = $draftCheck.checked ? `draft: true` : "";
+
+    const fmLines = [
       "---",
       `title: "${esc(title)}"`,
-      `date: ${dateStr}`,
+      dateLine,
       catsYaml,
       tagsYaml,
       `rss: ${rss}`,
       `description: "${desc}"`,
-      "---",
-      "",
-      body,
-      "",
-    ].join("\n");
+    ];
+    if (draftLine) fmLines.push(draftLine);
+    if (updatedLine) fmLines.push(updatedLine);
+    fmLines.push("---", "", body, "");
+    const fm = fmLines.join("\n");
 
-    const isUpdate = !!editingFile;
     publishing = true;
     $btnPublish.disabled = true;
     $btnPublish.textContent = isUpdate ? "更新中..." : "发布中...";
@@ -877,7 +1040,7 @@ const postsData = posts.map((p) => ({
       if (editingFile?.sha) bodyObj.sha = editingFile.sha;
 
       const res = await fetch(
-        `https://api.github.com/repos/${REPO}/contents/${CONTENT_PATH}/${filename}`,
+        `https://api.github.com/repos/${getRepo()}/contents/${CONTENT_PATH}/${filename}`,
         {
           method: "PUT",
           headers: {
@@ -913,25 +1076,22 @@ const postsData = posts.map((p) => ({
 
       // Update post list entry
       if (isUpdate) {
-        updatePostInList(filename, title, dateStr, cats, tags, rss, slug);
+        updatePostInList(filename, title, today, cats, tags, rss, $draftCheck.checked, slug);
       } else {
-        addPostToList(filename, title, dateStr, cats, tags, rss, slug, ts);
+        addPostToList(filename, title, today, cats, tags, rss, $draftCheck.checked, slug, ts);
       }
 
-      // Reset editor for new post mode; stay in editor for edit mode
-      if (!isUpdate) {
-        $content.value = "";
-        $preview.innerHTML = '<span style="color:var(--color-text-muted);font-style:italic;">在左边输入内容，这里会实时渲染……</span>';
-        $categories.value = "";
-        $tags.value = "";
-        $rssCheck.checked = true;
-        $charCount.textContent = "0 字";
-        editingFile = null;
-        $editorModeLabel.textContent = "新增内容";
-        $btnPublish.textContent = "发布";
-        clearDraft();
-      }
-      $content.focus();
+      // Publish done — return to dashboard
+      clearDraft();
+      editingFile = null;
+      $content.value = "";
+      $categories.value = "";
+      $tags.value = "";
+      $rssCheck.checked = true;
+      $charCount.textContent = "0 字";
+      $editorModeLabel.textContent = "新增内容";
+      $btnPublish.textContent = "发布";
+      showState("dashboard");
     } catch (e) {
       const msg = (e as Error).message;
       if (msg.includes("令牌")) {
@@ -955,7 +1115,7 @@ const postsData = posts.map((p) => ({
     }
   }
 
-  function updatePostInList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, slug: string) {
+  function updatePostInList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, draft: boolean, slug: string) {
     const item = $postList.querySelector(`[data-filename="${CSS.escape(filename)}"]`) as HTMLElement | null;
     if (!item) return;
     const titleEl = item.querySelector(".post-item-title") as HTMLElement | null;
@@ -963,12 +1123,12 @@ const postsData = posts.map((p) => ({
     const viewLink = item.querySelector(".post-item-actions a") as HTMLElement | null;
     if (titleEl) titleEl.textContent = title;
     if (metaEl) {
-      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span style="color:var(--color-accent);"> · 未推送</span>' : ""}`;
+      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>${draft ? '<span style="color:#dc2626;"> · 私密</span>' : ""}${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span style="color:var(--color-accent);"> · 未推送</span>' : ""}`;
     }
     if (viewLink) viewLink.href = `/posts/${slug}/`;
   }
 
-  function addPostToList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, slug: string, ts: string) {
+  function addPostToList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, draft: boolean, slug: string, ts: string) {
     const div = document.createElement("div");
     div.className = "post-item";
     div.dataset.filename = filename;
@@ -977,6 +1137,7 @@ const postsData = posts.map((p) => ({
         <a href="/posts/${slug}-${ts}/" class="post-item-title">${title}</a>
         <div class="post-item-meta">
           <time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
+          ${draft ? '<span style="color:#dc2626;"> · 私密</span>' : ""}
           ${cats.length ? " · " + cats.join(", ") : ""}
           ${!rss ? '<span style="color:var(--color-accent);"> · 未推送</span>' : ""}
         </div>
@@ -1002,7 +1163,16 @@ const postsData = posts.map((p) => ({
 
   // ===== Init =====
   if (hasToken()) {
-    showState("dashboard");
+    const repoDisplay = document.getElementById("repo-display");
+    if (repoDisplay) repoDisplay.textContent = getRepo();
+    const pendingEdit = getPendingEdit();
+    if (pendingEdit) {
+      showState("dashboard");
+      openEditPost(pendingEdit);
+      clearPendingEdit();
+    } else {
+      showState("dashboard");
+    }
   } else {
     showState("setup");
   }

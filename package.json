@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
+    "postbuild": "pagefind --site dist",
     "preview": "astro preview"
   },
   "dependencies": {
@@ -13,5 +14,8 @@
     "astro": "^5.13.4",
     "marked": "^18.0.5",
     "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "pagefind": "^1.5.2"
   }
 }

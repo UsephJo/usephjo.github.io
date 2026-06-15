@@ -1,14 +1,14 @@
 ---
 import { getCollection } from "astro:content";
+import { TAG_CLOUD_LIMIT } from "../consts";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PostCard from "../components/PostCard.astro";
 import Sidebar from "../components/Sidebar.astro";
 
 const posts = await getCollection("posts", ({ data }) => !data.draft);
 const notes = await getCollection("notes", ({ data }) => !data.draft);
-const moments = await getCollection("moments", ({ data }) => !data.draft);
 
-const allPosts = [...posts, ...notes, ...moments].sort(
+const allPosts = [...posts, ...notes].sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
 
@@ -34,7 +34,7 @@ for (const post of allPosts) {
 const tags = Array.from(tagCounts.entries())
   .map(([tag, count]) => ({ tag, count }))
   .sort((a, b) => b.count - a.count)
-  .slice(0, 15);
+  .slice(0, TAG_CLOUD_LIMIT);
 ---
 
 <BaseLayout>
