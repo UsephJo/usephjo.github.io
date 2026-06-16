@@ -68,7 +68,7 @@ const postsData = posts.map((p) => ({
                   <div class="post-item-main">
                     <a href={`/posts/${post.slug}/`} class="post-item-title">{post.title}</a>
                     <div class="post-item-meta">
-                      <time>{new Date(post.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
+                      <time>{new Date(post.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }) + " " + new Date(post.date).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</time>
                       {post.draft && <span class="draft-badge"> · 私密</span>}
                       {post.categories.length > 0 && (
                         <span> · {post.categories.join(", ")}</span>
@@ -1162,7 +1162,7 @@ const postsData = posts.map((p) => ({
 
     const now = new Date();
     const pad2 = (n: number) => String(n).padStart(2, "0");
-    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}T${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
     const slug = slugify(title);
     const ts = now.getTime().toString(36);
     const filename = editingFile ? editingFile.filename : `${slug}-${ts}.md`;

@@ -35,7 +35,7 @@ const typeLabel = post.collection === "notes" ? "笔记" : "文章";
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-              })}
+              }) + " " + date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
             </time>
             {updated && (
               <span>
@@ -44,7 +44,7 @@ const typeLabel = post.collection === "notes" ? "笔记" : "文章";
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                })}
+                }) + " " + updated.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
               </span>
             )}
             <span>{typeLabel}</span>
