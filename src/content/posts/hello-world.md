@@ -1,6 +1,6 @@
 ---
 title: Hello, World
-date: 2026-06-12
+date: 2026-06-13T00:30:30+08:00
 categories: [thinking]
 tags: [blog, 开始]
 description: 第一篇博客文章，测试各种 Markdown 和 Obsidian 语法。

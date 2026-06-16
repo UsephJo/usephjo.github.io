@@ -1,6 +1,6 @@
 ---
 title: "再短评FOMO"
-date: 2026-06-16
+date: 2026-06-16T08:58:23+08:00
 categories: [tech, life]
 tags: [thinking, reflecting]
 rss: true

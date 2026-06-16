@@ -1162,7 +1162,10 @@ const postsData = posts.map((p) => ({
 
     const now = new Date();
     const pad2 = (n: number) => String(n).padStart(2, "0");
-    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}T${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    const tzOffset = -now.getTimezoneOffset();
+    const tzSign = tzOffset >= 0 ? "+" : "-";
+    const tzStr = `${tzSign}${pad2(Math.floor(Math.abs(tzOffset) / 60))}:${pad2(Math.abs(tzOffset) % 60)}`;
+    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}T${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}${tzStr}`;
     const slug = slugify(title);
     const ts = now.getTime().toString(36);
     const filename = editingFile ? editingFile.filename : `${slug}-${ts}.md`;

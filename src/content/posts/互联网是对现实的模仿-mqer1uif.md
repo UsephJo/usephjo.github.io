@@ -1,6 +1,6 @@
 ---
 title: "互联网是对现实的模仿"
-date: 2026-06-15
+date: 2026-06-15T13:05:14+08:00
 categories: []
 tags: []
 rss: true

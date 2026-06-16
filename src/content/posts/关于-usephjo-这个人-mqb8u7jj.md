@@ -1,6 +1,6 @@
 ---
 title: "# 关于 UsephJo 这个人"
-date: 2026-06-12
+date: 2026-06-13T02:12:06+08:00
 categories: [tech, life]
 tags: []
 rss: true

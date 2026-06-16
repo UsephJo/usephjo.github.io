@@ -1,6 +1,6 @@
 ---
 title: "爱一个人就是爱其语言系统"
-date: 2026-06-14
+date: 2026-06-14T10:11:21+08:00
 categories: []
 tags: []
 rss: true

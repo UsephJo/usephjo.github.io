@@ -1,6 +1,6 @@
 ---
 title: 布局自定义指南
-date: 2026-06-10
+date: 2026-06-13T00:30:30+08:00
 updated: 2026-06-12
 categories: [tech]
 tags: [astro, 指南, 自定义]

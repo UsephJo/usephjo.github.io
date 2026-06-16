@@ -1,6 +1,6 @@
 ---
 title: "# test 2 - bilibili link"
-date: 2026-06-13
+date: 2026-06-13T14:23:20+08:00
 categories: []
 tags: []
 rss: false

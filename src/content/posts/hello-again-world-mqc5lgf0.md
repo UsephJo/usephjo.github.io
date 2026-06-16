@@ -1,6 +1,6 @@
 ---
 title: "Hello again, world"
-date: 2026-06-13
+date: 2026-06-13T17:29:05+08:00
 categories: []
 tags: []
 rss: true
