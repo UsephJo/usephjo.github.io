@@ -37,16 +37,6 @@ const typeLabel = post.collection === "notes" ? "笔记" : "文章";
                 day: "numeric",
               }) + " " + date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
             </time>
-            {updated && (
-              <span>
-                更新于{" "}
-                {updated.toLocaleDateString("zh-CN", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }) + " " + updated.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            )}
             <span>{typeLabel}</span>
             {postCategories.map((c) => (
               <a href={`/categories/${c.slug}`}>{c.emoji} {c.label}</a>
@@ -66,6 +56,16 @@ const typeLabel = post.collection === "notes" ? "笔记" : "文章";
               {tags.map((t) => (
                 <a href={`/categories/${t}`} class="tag-pill">{t}</a>
               ))}
+            </p>
+          )}
+          {updated && (
+            <p class="article-updated">
+              修改于{" "}
+              {updated.toLocaleDateString("zh-CN", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }) + " " + updated.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
           <p class="article-footer-links">

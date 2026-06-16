@@ -3,10 +3,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
 const posts = await getCollection("posts");
-const postsData = posts.map((p) => ({
+const sortedPosts = posts.sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const postsData = sortedPosts.map((p) => ({
   id: p.id,
   title: p.data.title,
   date: p.data.date.toISOString(),
+  updated: p.data.updated?.toISOString() ?? null,
   categories: p.data.categories ?? [],
   tags: p.data.tags ?? [],
   rss: p.data.rss,
@@ -69,6 +73,11 @@ const postsData = posts.map((p) => ({
                     <a href={`/posts/${post.slug}/`} class="post-item-title">{post.title}</a>
                     <div class="post-item-meta">
                       <time>{new Date(post.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }) + " " + new Date(post.date).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</time>
+                      {post.updated && (
+                        <span> · 修改于{" "}
+                          {new Date(post.updated).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }) + " " + new Date(post.updated).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
                       {post.draft && <span class="draft-badge"> · 私密</span>}
                       {post.categories.length > 0 && (
                         <span> · {post.categories.join(", ")}</span>
@@ -729,6 +738,7 @@ const postsData = posts.map((p) => ({
     $categories.value = "";
     $tags.value = "";
     $rssCheck.checked = true;
+    $rssCheck.disabled = false;
     $draftCheck.checked = false;
     $charCount.textContent = "0 字";
     $editorFilename.textContent = "";
@@ -806,6 +816,7 @@ const postsData = posts.map((p) => ({
         if (rssMatch) {
           $rssCheck.checked = rssMatch[1] === "true";
         }
+        $rssCheck.disabled = true;
         if (draftMatch) {
           $draftCheck.checked = draftMatch[1] === "true";
         } else {
@@ -1244,7 +1255,7 @@ const postsData = posts.map((p) => ({
 
       // Update post list entry
       if (isUpdate) {
-        updatePostInList(filename, title, today, cats, tags, rss, $draftCheck.checked, slug);
+        updatePostInList(filename, title, today, cats, tags, rss, $draftCheck.checked, slug, today);
       } else {
         addPostToList(filename, title, today, cats, tags, rss, $draftCheck.checked, slug, ts);
       }
@@ -1283,7 +1294,7 @@ const postsData = posts.map((p) => ({
     }
   }
 
-  function updatePostInList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, draft: boolean, slug: string) {
+  function updatePostInList(filename: string, title: string, dateStr: string, cats: string[], tags: string[], rss: boolean, draft: boolean, slug: string, updatedStr?: string) {
     const item = $postList.querySelector(`[data-filename="${CSS.escape(filename)}"]`) as HTMLElement | null;
     if (!item) return;
     const titleEl = item.querySelector(".post-item-title") as HTMLElement | null;
@@ -1291,7 +1302,8 @@ const postsData = posts.map((p) => ({
     const viewLink = item.querySelector(".post-item-actions a") as HTMLElement | null;
     if (titleEl) titleEl.textContent = title;
     if (metaEl) {
-      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>${draft ? '<span class="draft-badge"> · 私密</span>' : ""}${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span class="rss-badge"> · 未推送</span>' : ""}`;
+      const updatedHtml = updatedStr ? ` · 修改于 ${new Date(updatedStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }) + " " + new Date(updatedStr).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}` : "";
+      metaEl.innerHTML = `<time>${new Date(dateStr).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }) + " " + new Date(dateStr).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</time>${updatedHtml}${draft ? '<span class="draft-badge"> · 私密</span>' : ""}${cats.length ? " · " + cats.join(", ") : ""}${!rss ? '<span class="rss-badge"> · 未推送</span>' : ""}`;
     }
     if (viewLink) viewLink.href = `/posts/${slug}/`;
   }

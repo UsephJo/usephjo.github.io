@@ -416,6 +416,12 @@ th {
   display: flex; flex-wrap: wrap; gap: 0.4rem;
   margin-bottom: 0.5rem;
 }
+.article-updated {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  opacity: 0.65;
+  margin-bottom: 0.5rem;
+}
 
 /* === Table of Contents === */
 .toc {
